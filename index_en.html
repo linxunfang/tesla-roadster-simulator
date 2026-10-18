@@ -559,6 +559,43 @@
         .modal-btn:hover {
             background: #dc2626;
         }
+
+        .btn-coffee {
+            background: linear-gradient(135deg, #FFDD00 0%, #FBBF24 100%);
+            color: #050505 !important;
+            border: 1px solid rgba(251, 191, 36, 0.4);
+            padding: 6px 13px;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 10px rgba(251, 191, 36, 0.25);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-coffee:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.45);
+            background: linear-gradient(135deg, #FFE433 0%, #F59E0B 100%);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .modal-coffee {
+            padding: 10px 22px;
+            font-size: 14px;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
@@ -585,6 +622,10 @@
         </div>
 
         <div class="header-actions">
+            <a href="https://buymeacoffee.com" target="_blank" rel="noopener noreferrer" class="btn-coffee" id="btn-coffee-header" title="Support creator with a coffee">
+                <span>☕</span>
+                <span id="coffee-header-text">Buy me a coffee</span>
+            </a>
             <button class="btn-toggle-hud" id="btn-lang-toggle" title="Switch Language (English / 한국어)">🌐 한국어</button>
             <button class="btn-toggle-hud active" id="btn-toggle-dock" title="Toggle Controller Dock">🎮 Controller</button>
             <button class="btn-restart" id="btn-reset">🔄 Restart (R)</button>
@@ -716,7 +757,13 @@
         <div class="modal" id="modal">
             <div class="modal-title" id="modal-title">TOUCHDOWN</div>
             <div class="modal-score" id="modal-desc">Landing Telemetry</div>
-            <button class="modal-btn" id="modal-restart-btn">Try Again (R)</button>
+            <div class="modal-actions">
+                <button class="modal-btn" id="modal-restart-btn">Try Again (R)</button>
+                <a href="https://buymeacoffee.com" target="_blank" rel="noopener noreferrer" class="btn-coffee modal-coffee" id="btn-coffee-modal">
+                    <span>☕</span>
+                    <span id="coffee-modal-text">Buy me a coffee</span>
+                </a>
+            </div>
         </div>
     </div>
 
@@ -775,6 +822,7 @@
                 crashTitle: "💥 CRASH & FLIP",
                 crashDesc: (r, p, t, g) => `앞/뒤 하부 분사로 수평 평형을 잡지 못했거나 강하 속도가 너무 빨랐습니다!<br>롤: <b>${r}°</b>, 피치: <b>${p}°</b> (종합 ${t}°)<br>착지 충격량: <b>${g} G</b>`,
                 retryBtn: "다시 시도하기 (R)",
+                coffeeBtn: "☕ 커피 한 잔 후원하기",
                 airborneToast: "🚨 상하(W / ▲)로 180° 회전하고, 좌우(A / D, ◀ / ▶)로 차체 수평을 맞추세요!"
             },
             en: {
@@ -811,6 +859,7 @@
                 crashTitle: "💥 CRASH & FLIP",
                 crashDesc: (r, p, t, g) => `Failed to level pitch or descent speed was too fast!<br>Roll: <b>${r}°</b>, Pitch: <b>${p}°</b> (Total ${t}°)<br>Impact Force: <b>${g} G</b>`,
                 retryBtn: "Try Again (R)",
+                coffeeBtn: "☕ Buy me a coffee",
                 airborneToast: "🚨 Press W / ▲ for 180° roll, A / D (◀ / ▶) for pitch balance!"
             }
         };
@@ -898,6 +947,11 @@
 
             const modalRestart = document.getElementById("modal-restart-btn");
             if (modalRestart) modalRestart.innerText = t.retryBtn;
+
+            const coffeeHeader = document.getElementById("coffee-header-text");
+            if (coffeeHeader) coffeeHeader.innerText = t.coffeeBtn;
+            const coffeeModal = document.getElementById("coffee-modal-text");
+            if (coffeeModal) coffeeModal.innerText = t.coffeeBtn;
         }
 
         // Speed buttons
