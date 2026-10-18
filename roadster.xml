@@ -1,0 +1,131 @@
+<mujoco model="tesla_roadster">
+  <compiler angle="degree" coordinate="local"/>
+
+  <option gravity="0 0 -9.81" timestep="0.002" integrator="implicitfast">
+    <flag contact="enable"/>
+  </option>
+
+  <visual>
+    <headlight ambient="0.3 0.3 0.3" diffuse="0.7 0.7 0.7" specular="0.4 0.4 0.4"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global offwidth="1280" offheight="720"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.2 0.3 0.5" rgb2="0.05 0.05 0.1" width="512" height="512"/>
+    <texture name="grid" type="2d" builtin="checker" width="512" height="512" rgb1="0.15 0.15 0.15" rgb2="0.25 0.25 0.25"/>
+    <material name="grid_mat" texture="grid" texrepeat="20 20" reflectance="0.1"/>
+    
+    <material name="car_red" rgba="0.85 0.08 0.12 1.0" specular="0.8" shininess="0.9" reflectance="0.4"/>
+    <material name="carbon" rgba="0.1 0.1 0.12 1.0" specular="0.4" shininess="0.5"/>
+    <material name="glass" rgba="0.15 0.2 0.25 0.7" specular="0.9" shininess="1.0"/>
+    <material name="tire_rubber" rgba="0.08 0.08 0.08 1.0" specular="0.1" shininess="0.1"/>
+    <material name="rim_metal" rgba="0.6 0.6 0.65 1.0" specular="0.8" shininess="0.8"/>
+    <material name="thruster_flame" rgba="0.4 0.8 1.0 0.8" emission="1.0"/>
+  </asset>
+
+  <worldbody>
+    <!-- 지면 (Ground Plane) -->
+    <geom name="ground" type="plane" size="50 50 0.1" material="grid_mat" friction="1.2 0.01 0.001"/>
+
+    <!-- 조명 -->
+    <light directional="true" pos="0 0 10" dir="0 0 -1" diffuse="0.8 0.8 0.8" specular="0.5 0.5 0.5"/>
+    <light directional="true" pos="10 -10 8" dir="-0.5 0.5 -0.5" diffuse="0.5 0.5 0.5"/>
+
+    <!-- Tesla Roadster Body -->
+    <!-- 초기 위치: 높이 3.5m (공중 도약/낙하 상태), 약간의 롤과 피치 기울기 -->
+    <body name="chassis" pos="0 0 3.5" euler="12 8 0">
+      <freejoint name="root"/>
+
+      <!-- 차체 메인 프레임 (질량 ~1800kg) -->
+      <inertial pos="0 0 0.1" mass="1800" diaginertia="800 2400 2600"/>
+
+      <!-- 시점 카메라 (추적 카메라) -->
+      <camera name="tracking" mode="trackcom" pos="-5.5 0 2.2" xyaxes="0 -1 0 0.35 0 0.93"/>
+      <camera name="front_view" mode="trackcom" pos="5.5 0 1.8" xyaxes="0 1 0 -0.3 0 0.95"/>
+      <camera name="side_view" mode="trackcom" pos="0 -6 1.8" xyaxes="1 0 0 0 0.3 0.95"/>
+
+      <!-- 외형: 공기역학적 스포츠카 바디 (테슬라 로드스터 스타일) -->
+      <!-- 메인 차체 하부 -->
+      <geom name="body_lower" type="box" size="2.0 0.85 0.16" pos="0 0 0.12" material="car_red"/>
+      <!-- 프론트 노즈 (날렵하게 경사진 앞부분) -->
+      <geom name="body_nose" type="capsule" fromto="1.6 -0.8 0.12 1.95 0 0.08" size="0.12" material="car_red"/>
+      <geom name="body_nose2" type="capsule" fromto="1.6 0.8 0.12 1.95 0 0.08" size="0.12" material="car_red"/>
+      <geom name="body_hood" type="box" size="0.5 0.8 0.08" pos="1.4 0 0.18" material="car_red"/>
+      
+      <!-- 캐빈 & 글래스 루프 (콕핏) -->
+      <geom name="cabin" type="box" size="0.9 0.7 0.18" pos="-0.1 0 0.36" material="glass"/>
+      
+      <!-- 리어 디퓨저 & 스포일러 -->
+      <geom name="diffuser" type="box" size="0.3 0.82 0.06" pos="-1.9 0 0.12" material="carbon"/>
+      <geom name="spoiler" type="box" size="0.12 0.8 0.02" pos="-1.85 0 0.35" material="carbon"/>
+
+      <!-- SpaceX Cold-Gas Thruster 배기구 (가시화용 사이트) -->
+      <site name="thruster_fl" pos="1.5 0.7 0.02" size="0.06" type="cylinder" material="thruster_flame"/>
+      <site name="thruster_fr" pos="1.5 -0.7 0.02" size="0.06" type="cylinder" material="thruster_flame"/>
+      <site name="thruster_rl" pos="-1.5 0.7 0.02" size="0.06" type="cylinder" material="thruster_flame"/>
+      <site name="thruster_rr" pos="-1.5 -0.7 0.02" size="0.06" type="cylinder" material="thruster_flame"/>
+
+      <!-- ================= 4개 독립 서스펜션 & 휠 ================= -->
+      
+      <!-- 1. Front-Left (앞 좌측) -->
+      <body name="susp_fl" pos="1.4 0.82 0">
+        <!-- Z축 슬라이더 (서스펜션 스프링 & 댐퍼) -->
+        <joint name="susp_fl_joint" type="slide" axis="0 0 1" range="-0.25 0.15" stiffness="65000" damping="4500"/>
+        <geom name="susp_fl_arm" type="capsule" fromto="0 0 0.1 0 0 -0.1" size="0.04" material="carbon"/>
+        
+        <body name="wheel_fl" pos="0 0.08 -0.15">
+          <joint name="wheel_fl_joint" type="hinge" axis="0 1 0" damping="0.8"/>
+          <geom name="tire_fl" type="cylinder" size="0.33 0.12" zaxis="0 1 0" material="tire_rubber" friction="1.5 0.01 0.001"/>
+          <geom name="rim_fl" type="cylinder" size="0.22 0.122" zaxis="0 1 0" material="rim_metal"/>
+        </body>
+      </body>
+
+      <!-- 2. Front-Right (앞 우측) -->
+      <body name="susp_fr" pos="1.4 -0.82 0">
+        <joint name="susp_fr_joint" type="slide" axis="0 0 1" range="-0.25 0.15" stiffness="65000" damping="4500"/>
+        <geom name="susp_fr_arm" type="capsule" fromto="0 0 0.1 0 0 -0.1" size="0.04" material="carbon"/>
+        
+        <body name="wheel_fr" pos="0 -0.08 -0.15">
+          <joint name="wheel_fr_joint" type="hinge" axis="0 1 0" damping="0.8"/>
+          <geom name="tire_fr" type="cylinder" size="0.33 0.12" zaxis="0 1 0" material="tire_rubber" friction="1.5 0.01 0.001"/>
+          <geom name="rim_fr" type="cylinder" size="0.22 0.122" zaxis="0 1 0" material="rim_metal"/>
+        </body>
+      </body>
+
+      <!-- 3. Rear-Left (뒤 좌측) -->
+      <body name="susp_rl" pos="-1.4 0.82 0">
+        <joint name="susp_rl_joint" type="slide" axis="0 0 1" range="-0.25 0.15" stiffness="70000" damping="4800"/>
+        <geom name="susp_rl_arm" type="capsule" fromto="0 0 0.1 0 0 -0.1" size="0.04" material="carbon"/>
+        
+        <body name="wheel_rl" pos="0 0.08 -0.15">
+          <joint name="wheel_rl_joint" type="hinge" axis="0 1 0" damping="0.8"/>
+          <geom name="tire_rl" type="cylinder" size="0.35 0.14" zaxis="0 1 0" material="tire_rubber" friction="1.5 0.01 0.001"/>
+          <geom name="rim_rl" type="cylinder" size="0.23 0.142" zaxis="0 1 0" material="rim_metal"/>
+        </body>
+      </body>
+
+      <!-- 4. Rear-Right (뒤 우측) -->
+      <body name="susp_rr" pos="-1.4 -0.82 0">
+        <joint name="susp_rr_joint" type="slide" axis="0 0 1" range="-0.25 0.15" stiffness="70000" damping="4800"/>
+        <geom name="susp_rr_arm" type="capsule" fromto="0 0 0.1 0 0 -0.1" size="0.04" material="carbon"/>
+        
+        <body name="wheel_rr" pos="0 -0.08 -0.15">
+          <joint name="wheel_rr_joint" type="hinge" axis="0 1 0" damping="0.8"/>
+          <geom name="tire_rr" type="cylinder" size="0.35 0.14" zaxis="0 1 0" material="tire_rubber" friction="1.5 0.01 0.001"/>
+          <geom name="rim_rr" type="cylinder" size="0.23 0.142" zaxis="0 1 0" material="rim_metal"/>
+        </body>
+      </body>
+
+    </body>
+  </worldbody>
+
+  <!-- 액추에이터: 4개 코너 SpaceX 콜드 가스 하향 스러스터 (추력: 각 0~12,000 N) -->
+  <actuator>
+    <general name="thrust_fl" site="thruster_fl" gear="0 0 1 0 0 0" ctrllimited="true" ctrlrange="0 12000"/>
+    <general name="thrust_fr" site="thruster_fr" gear="0 0 1 0 0 0" ctrllimited="true" ctrlrange="0 12000"/>
+    <general name="thrust_rl" site="thruster_rl" gear="0 0 1 0 0 0" ctrllimited="true" ctrlrange="0 12000"/>
+    <general name="thrust_rr" site="thruster_rr" gear="0 0 1 0 0 0" ctrllimited="true" ctrlrange="0 12000"/>
+  </actuator>
+
+</mujoco>
