@@ -1,0 +1,1977 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesla Roadster SpaceX Semi-Circle Ramp & Lateral Thruster Simulator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: #030407;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* 탑 바 네비게이션 */
+        header {
+            height: 56px;
+            background: linear-gradient(180deg, rgba(12, 14, 20, 0.95) 0%, rgba(5, 7, 10, 0.9) 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 20;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            font-size: 19px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .brand-badge {
+            background: #e82127;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 4px;
+            letter-spacing: 1px;
+        }
+
+        .brand-sub {
+            font-size: 13px;
+            color: #94a3b8;
+            letter-spacing: 0.5px;
+        }
+
+        .mode-selector {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            padding: 3px;
+            gap: 4px;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 6px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .mode-btn.active {
+            background: #e82127;
+            color: #ffffff;
+            box-shadow: 0 0 14px rgba(232, 33, 39, 0.5);
+        }
+
+        /* 속도 조절 UI */
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            padding: 4px 10px;
+        }
+
+        .speed-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            letter-spacing: 1px;
+        }
+
+        .speed-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #cbd5e1;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .speed-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .speed-btn.active {
+            background: #38bdf8;
+            color: #030407;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-toggle-hud {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #cbd5e1;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-toggle-hud:hover {
+            background: rgba(255, 255, 255, 0.16);
+            color: #fff;
+        }
+
+        .btn-toggle-hud.active {
+            background: #0284c7;
+            border-color: #38bdf8;
+            color: #fff;
+        }
+
+        .btn-restart {
+            background: #2563eb;
+            color: white;
+            border: 1px solid #3b82f6;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-restart:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        /* 메인 뷰포트 */
+        #sim-viewport {
+            flex: 1;
+            position: relative;
+            background: #020305;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* 상단 텔레메트리 바 */
+        .telemetry-banner {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 14, 22, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 8px 24px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            font-family: monospace;
+            font-size: 13px;
+            color: #cbd5e1;
+            z-index: 10;
+        }
+
+        .telemetry-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .telemetry-item span.val {
+            color: #38bdf8;
+            font-weight: 700;
+        }
+
+        /* 하단 HUD */
+        .hud-overlay-bottom {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 0 40px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-group-left, .hud-group-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* 원형 다이얼 게이지 */
+        .dial-gauge {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dial-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .dial-track {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.15);
+            stroke-width: 4.5;
+        }
+
+        .dial-progress {
+            fill: none;
+            stroke: #ffffff;
+            stroke-width: 4.5;
+            stroke-linecap: round;
+            stroke-dasharray: 264;
+            stroke-dashoffset: 200;
+            transition: stroke-dashoffset 0.05s linear, stroke 0.2s;
+        }
+
+        .dial-title {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: #94a3b8;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+        }
+
+        .dial-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: #ffffff;
+            font-family: 'SF Pro Display', -apple-system, monospace;
+            line-height: 1;
+        }
+
+        .dial-unit {
+            font-size: 10px;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-top: 3px;
+        }
+
+        /* 자세 인디케이터 구체 */
+        .attitude-indicator {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: radial-gradient(circle at 50% 50%, rgba(20, 25, 35, 0.95), rgba(5, 7, 10, 0.98));
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.9), inset 0 0 15px rgba(255, 255, 255, 0.05);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .attitude-car {
+            width: 65px;
+            height: 22px;
+            transition: transform 0.03s linear;
+        }
+
+        /* 탑뷰 스러스터 차량 다이어그램: 좌측 / 우측 스러스터 강조 */
+        .topview-car-panel {
+            width: 76px;
+            height: 100px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .topview-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 상단 수평 평형 & 역추진 온스크린 컨트롤러 도크 (상단 배치로 자동차 및 활주로 가림 완전 제거) */
+        .thruster-dock {
+            position: absolute;
+            top: 64px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 25;
+            background: rgba(15, 23, 42, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(14px);
+            padding: 5px 14px;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+            transition: all 0.25s ease;
+        }
+
+        .thruster-btn {
+            background: rgba(30, 41, 59, 0.85);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            color: #f1f5f9;
+            padding: 5px 13px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+            font-family: inherit;
+            transition: all 0.15s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .thruster-btn:hover {
+            background: rgba(51, 65, 85, 0.95);
+            border-color: #38bdf8;
+            transform: translateY(-2px);
+        }
+
+        .thruster-btn.active, .thruster-btn:active {
+            background: #ea580c;
+            border-color: #ffedd5;
+            box-shadow: 0 0 18px rgba(249, 115, 22, 0.9);
+            transform: translateY(1px);
+        }
+
+        .thruster-btn.both.active, .thruster-btn.both:active {
+            background: #2563eb;
+            border-color: #93c5fd;
+            box-shadow: 0 0 22px rgba(56, 189, 248, 0.95);
+        }
+
+        .thruster-btn.roll.active, .thruster-btn.roll:active {
+            background: #0284c7;
+            border-color: #7dd3fc;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.95);
+        }
+
+        .t-icon {
+            font-size: 14px;
+        }
+
+        .t-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .t-sub {
+            font-size: 9px;
+            color: #94a3b8;
+        }
+
+        .thruster-btn.active .t-sub, .thruster-btn:active .t-sub {
+            color: #ffedd5;
+        }
+
+        .thruster-toggle-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #94a3b8;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            margin-left: 4px;
+        }
+
+        .thruster-toggle-btn:hover {
+            color: #fff;
+            background: rgba(239, 68, 68, 0.8);
+            border-color: #fca5a5;
+        }
+
+        /* 조작 가이드 (하단 바닥 안전 구역: 자동차 지면 아래에 위치) */
+        .key-guide {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 14px;
+            background: rgba(10, 14, 22, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            padding: 5px 16px;
+            border-radius: 14px;
+            font-size: 11px;
+            color: #cbd5e1;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 20;
+        }
+
+        .key-tag {
+            background: rgba(255, 255, 255, 0.18);
+            color: #fff;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-weight: bold;
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        /* 상태 알림 토스트 (도크 아래 위치) */
+        .status-toast {
+            position: absolute;
+            top: 132px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            font-weight: 700;
+            color: #f59e0b;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+            z-index: 20;
+        }
+
+        .status-toast.show {
+            opacity: 1;
+        }
+
+        /* 결과 모달 */
+        .modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: rgba(12, 16, 25, 0.95);
+            border: 2px solid #38bdf8;
+            border-radius: 16px;
+            padding: 30px 42px;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 100;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
+            min-width: 360px;
+        }
+
+        .modal.show {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .modal.success {
+            border-color: #22c55e;
+            box-shadow: 0 0 50px rgba(34, 197, 94, 0.4);
+        }
+
+        .modal.crash {
+            border-color: #ef4444;
+            box-shadow: 0 0 50px rgba(239, 68, 68, 0.4);
+        }
+
+        .modal-title {
+            font-size: 26px;
+            font-weight: 900;
+            margin-bottom: 12px;
+        }
+
+        .modal-score {
+            font-size: 14px;
+            color: #cbd5e1;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .modal-btn {
+            background: #e82127;
+            color: white;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .modal-btn:hover {
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand">
+            <div class="brand-logo">TESLA</div>
+            <div class="brand-badge">SPACEX</div>
+            <div class="brand-sub">SEMI-CIRCLE RAMP & LATERAL THRUSTERS</div>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" id="btn-manual">🕹️ 수동 착지 (Manual)</button>
+            <button class="mode-btn" id="btn-ai">🤖 AI 오토파일럿 (Autopilot)</button>
+            <button class="mode-btn" id="btn-vs">⚔️ 사람 vs AI 비교</button>
+        </div>
+
+        <!-- 속도 조절 UI (유저 맞춤형 슬로우 모션) -->
+        <div class="speed-control">
+            <span class="speed-label">SPEED:</span>
+            <button class="speed-btn active" data-speed="0.35">0.35x (추천)</button>
+            <button class="speed-btn" data-speed="0.5">0.5x</button>
+            <button class="speed-btn" data-speed="0.75">0.75x</button>
+            <button class="speed-btn" data-speed="1.0">1.0x (실시간)</button>
+        </div>
+
+        <div class="header-actions">
+            <button class="btn-toggle-hud" id="btn-lang-toggle" title="Switch Language (English / 한국어)">🌐 English</button>
+            <button class="btn-toggle-hud active" id="btn-toggle-dock" title="온스크린 컨트롤러 버튼 숨김/표시">🎮 컨트롤러 패널</button>
+            <button class="btn-restart" id="btn-reset">🔄 재도약 (R)</button>
+        </div>
+    </header>
+
+    <div id="sim-viewport">
+        <canvas id="canvas"></canvas>
+
+        <!-- 상단 텔레메트리 바 -->
+        <div class="telemetry-banner">
+            <div class="telemetry-item">
+                <span>STAGE:</span>
+                <span class="val" id="hud-stage">APPROACH</span>
+            </div>
+            <div class="telemetry-item">
+                <span>ATTITUDE:</span>
+                <span class="val" id="hud-angle-deg">0.0°</span>
+            </div>
+            <div class="telemetry-item">
+                <span>AIR VELOCITY:</span>
+                <span class="val" id="hud-speed">0.0 MPH</span>
+            </div>
+            <div class="telemetry-item">
+                <span>COLD-GAS TANK:</span>
+                <span class="val" id="hud-tank">100%</span>
+            </div>
+        </div>
+
+        <!-- 상태 알림 토스트 (180도 뒤집힘 안내 등) -->
+        <div class="status-toast" id="status-toast">🚨 180° INVERTED! 상하(W / ▲)로 180° 회전하고, 좌우(A / D, ◀ / ▶)로 수평을 맞추세요!</div>
+
+        <!-- ★ 180도 롤 & 수평 평형 온스크린 컨트롤러 (상단 안전 구역 배치) -->
+        <div class="thruster-dock" id="thruster-dock">
+            <button class="thruster-btn roll" id="btn-roll-up" title="180도 롤 회전 복원 (W / ▲)">
+                <span class="t-icon">🔄 롤</span>
+                <span class="t-label">180° 회전 (W / ▲)</span>
+                <span class="t-sub">차체 바로세우기</span>
+            </button>
+            <button class="thruster-btn" id="btn-thrust-front" title="앞부분 하부 분사 (A / ◀)">
+                <span class="t-icon">🚀 앞</span>
+                <span class="t-label">앞머리 밑 분사 (A / ◀)</span>
+                <span class="t-sub">앞머리 상승 / 피치 평형</span>
+            </button>
+            <button class="thruster-btn both" id="btn-thrust-both" title="앞뒤 동시 분사 (SPACE / A+D)">
+                <span class="t-icon">⚡ 동시</span>
+                <span class="t-label">앞뒤 동시 분사 (SPACE / A+D)</span>
+                <span class="t-sub">수평 평형 유지 + 소프트 착지</span>
+            </button>
+            <button class="thruster-btn" id="btn-thrust-rear" title="뒷부분 하부 분사 (D / ▶)">
+                <span class="t-icon">🚀 뒤</span>
+                <span class="t-label">뒷부분 밑 분사 (D / ▶)</span>
+                <span class="t-sub">뒷부분 상승 / 피치 평형</span>
+            </button>
+            <button class="thruster-toggle-btn" id="btn-close-dock" title="컨트롤러 패널 숨기기">✕</button>
+        </div>
+
+        <!-- 키보드 안내 가이드: 상하 180도 회전 + 좌우 수평 제어 안내 -->
+        <div class="key-guide" id="key-guide">
+            <div><span class="key-tag">W / S (▲ / ▼)</span> 180° 상하 롤 회전 (자세 복원)</div>
+            <div><span class="key-tag">A / D (◀ / ▶)</span> 좌우 수평 제어 (앞 / 뒷부분 밑 분사)</div>
+            <div><span class="key-tag">A+D 동시 / SPACE</span> 앞뒤 동시 분사 (수평 & 소프트 착지)</div>
+        </div>
+
+        <!-- 하단 비디오 스타일 오버레이 HUD -->
+        <div class="hud-overlay-bottom">
+            <!-- 좌측: G-FORCE & ATTITUDE SPHERE -->
+            <div class="hud-group-left">
+                <div class="dial-gauge">
+                    <svg class="dial-svg" viewBox="0 0 100 100">
+                        <circle class="dial-track" cx="50" cy="50" r="42" />
+                        <circle class="dial-progress" id="g-dial" cx="50" cy="50" r="42" />
+                    </svg>
+                    <div class="dial-title">G-FORCE</div>
+                    <div class="dial-value" id="val-gforce">1.0</div>
+                    <div class="dial-unit">G</div>
+                </div>
+
+                <div class="attitude-indicator">
+                    <!-- 3D 느낌 로드스터 롤/피치 그래픽 -->
+                    <svg class="attitude-car" id="attitude-car" viewBox="0 0 60 20">
+                        <path d="M5,15 L12,8 L25,6 L42,9 L55,14 L52,16 L8,16 Z" fill="none" stroke="#38bdf8" stroke-width="2"/>
+                        <circle cx="15" cy="15" r="3.5" fill="#38bdf8"/>
+                        <circle cx="45" cy="15" r="3.5" fill="#38bdf8"/>
+                        <line x1="25" y1="6" x2="40" y2="9" stroke="#fff" stroke-width="1.5"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- 우측: TOPVIEW THRUSTERS (좌/우측면 및 앞/뒤 하부) & ALTITUDE -->
+            <div class="hud-group-right">
+                <div class="topview-car-panel">
+                    <svg class="topview-svg" viewBox="0 0 70 100">
+                        <!-- 차체 실루엣 -->
+                        <path d="M22,12 C28,8 42,8 48,12 C54,18 56,35 56,65 C56,82 52,90 48,93 C40,95 30,95 22,93 C18,90 14,82 14,65 C14,35 16,18 22,12 Z" 
+                              fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
+                        <!-- 윈드실드 -->
+                        <path d="M22,32 C28,28 42,28 48,32 L46,55 C40,57 30,57 24,55 Z" fill="rgba(56,189,248,0.2)" stroke="#38bdf8" stroke-width="1" />
+                        
+                        <!-- ★ 앞부분(FRONT) 하부 노즐 -->
+                        <rect id="rcs-front" x="27" y="14" width="16" height="8" rx="2" fill="#334155" />
+
+                        <!-- ★ 좌측면(Left Lateral) 스러스터 노즐 2개 -->
+                        <rect id="rcs-left-1" x="9" y="38" width="5" height="8" rx="1.5" fill="#334155" />
+                        <rect id="rcs-left-2" x="9" y="54" width="5" height="8" rx="1.5" fill="#334155" />
+
+                        <!-- ★ 우측면(Right Lateral) 스러스터 노즐 2개 -->
+                        <rect id="rcs-right-1" x="56" y="38" width="5" height="8" rx="1.5" fill="#334155" />
+                        <rect id="rcs-right-2" x="56" y="54" width="5" height="8" rx="1.5" fill="#334155" />
+
+                        <!-- ★ 뒷부분(REAR) 하부 노즐 -->
+                        <rect id="rcs-rear" x="27" y="78" width="16" height="8" rx="2" fill="#334155" />
+                    </svg>
+                </div>
+
+                <div class="dial-gauge">
+                    <svg class="dial-svg" viewBox="0 0 100 100">
+                        <circle class="dial-track" cx="50" cy="50" r="42" />
+                        <circle class="dial-progress" id="alt-dial" cx="50" cy="50" r="42" />
+                    </svg>
+                    <div class="dial-title">ALTITUDE</div>
+                    <div class="dial-value" id="val-altitude">0.0</div>
+                    <div class="dial-unit">FT</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 결과 모달 창 -->
+        <div class="modal" id="modal">
+            <div class="modal-title" id="modal-title">TOUCHDOWN</div>
+            <div class="modal-score" id="modal-desc">착지 데이터</div>
+            <button class="modal-btn" id="modal-restart-btn">다시 시도하기 (R)</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        let W = canvas.width = window.innerWidth;
+        let H = canvas.height = window.innerHeight - 56;
+
+        window.addEventListener("resize", () => {
+            W = canvas.width = window.innerWidth;
+            H = canvas.height = window.innerHeight - 56;
+            buildRampCurve();
+        });
+
+        // Modes & Time scale
+        let mode = "manual"; // manual, ai, vs
+        let timeScale = 0.35; // 슬로우 모션 (기본 0.35x)
+
+        // ==========================================
+        // 다국어 (i18n) 시스템 (한국어 / English 지원)
+        // ==========================================
+        const i18n = {
+            ko: {
+                langBtn: "🌐 English",
+                manualMode: "🕹️ 수동 착지 (Manual)",
+                aiMode: "🤖 AI 오토파일럿 (Autopilot)",
+                vsMode: "⚔️ 사람 vs AI 비교",
+                speedLabel: "SPEED:",
+                speedRec: "0.35x (추천)",
+                speedLive: "1.0x (실시간)",
+                toggleDock: "🎮 컨트롤러 패널",
+                restartBtn: "🔄 재도약 (R)",
+                statusInverted: "🚨 180° INVERTED! 상하(W / ▲)로 180° 회전하고, 좌우(A / D, ◀ / ▶)로 수평을 맞추세요!",
+                btnRollTitle: "180도 롤 회전 복원 (W / ▲)",
+                btnRollLabel: "180° 회전 (W / ▲)",
+                btnRollSub: "차체 바로세우기",
+                btnFrontTitle: "앞부분 하부 분사 (A / ◀)",
+                btnFrontLabel: "앞머리 밑 분사 (A / ◀)",
+                btnFrontSub: "앞머리 상승 / 피치 평형",
+                btnBothTitle: "앞뒤 동시 분사 (SPACE / A+D)",
+                btnBothLabel: "앞뒤 동시 분사 (SPACE / A+D)",
+                btnBothSub: "수평 평형 유지 + 소프트 착지",
+                btnRearTitle: "뒷부분 하부 분사 (D / ▶)",
+                btnRearLabel: "뒷부분 밑 분사 (D / ▶)",
+                btnRearSub: "뒷부분 상승 / 피치 평형",
+                keyGuideRoll: "180° 상하 롤 회전 (자세 복원)",
+                keyGuidePitch: "좌우 수평 제어 (앞 / 뒷부분 밑 분사)",
+                keyGuideBoth: "앞뒤 동시 분사 (수평 & 소프트 착지)",
+                perfectLevel: " (수평 완벽)",
+                perfectTitle: "🎯 SEMI-CIRCLE 180° PERFECT TOUCHDOWN!",
+                perfectDesc: (r, p, t, g) => `측면 롤 복원과 앞/뒤 하부 분사 수평 평형 완벽 성공!<br>착지 각도 오차: 롤 <b>${r}°</b>, 피치(수평) <b>${p}°</b> (종합 ${t}°)<br>착지 충격량: <b>${g} G</b> (서스펜션 완벽 흡수)`,
+                hardTitle: "⚠️ HARD LANDING",
+                hardDesc: (r, p, t, g) => `착지는 성공했으나 수평이 다소 기울어졌거나 강하 속도가 빨랐습니다.<br>롤: <b>${r}°</b>, 피치: <b>${p}°</b> (종합 ${t}°)<br>착지 충격량: <b>${g} G</b>`,
+                crashTitle: "💥 CRASH & FLIP",
+                crashDesc: (r, p, t, g) => `앞/뒤 하부 분사로 수평 평형을 잡지 못했거나 강하 속도가 너무 빨랐습니다!<br>롤: <b>${r}°</b>, 피치: <b>${p}°</b> (종합 ${t}°)<br>착지 충격량: <b>${g} G</b>`,
+                retryBtn: "다시 시도하기 (R)",
+                airborneToast: "🚨 상하(W / ▲)로 180° 회전하고, 좌우(A / D, ◀ / ▶)로 차체 수평을 맞추세요!"
+            },
+            en: {
+                langBtn: "🌐 한국어",
+                manualMode: "🕹️ Manual Landing",
+                aiMode: "🤖 AI Autopilot",
+                vsMode: "⚔️ Human vs AI",
+                speedLabel: "SPEED:",
+                speedRec: "0.35x (Rec)",
+                speedLive: "1.0x (Live)",
+                toggleDock: "🎮 Controller",
+                restartBtn: "🔄 Restart (R)",
+                statusInverted: "🚨 180° INVERTED! Press W / ▲ for 180° roll, A / D (◀ / ▶) to balance pitch!",
+                btnRollTitle: "180° Roll Recovery (W / ▲)",
+                btnRollLabel: "180° Roll (W / ▲)",
+                btnRollSub: "Right Inverted Body",
+                btnFrontTitle: "Front Bottom Thruster (A / ◀)",
+                btnFrontLabel: "Front Bottom (A / ◀)",
+                btnFrontSub: "Nose Up / Level Pitch",
+                btnBothTitle: "Dual Bottom Thrusters (SPACE / A+D)",
+                btnBothLabel: "Dual Thrusters (SPACE / A+D)",
+                btnBothSub: "Level Balance + Soft Landing",
+                btnRearTitle: "Rear Bottom Thruster (D / ▶)",
+                btnRearLabel: "Rear Bottom (D / ▶)",
+                btnRearSub: "Tail Up / Level Pitch",
+                keyGuideRoll: "180° Roll Recovery (W / S, ▲ / ▼)",
+                keyGuidePitch: "Pitch Leveling (Front / Rear Bottom: A / D, ◀ / ▶)",
+                keyGuideBoth: "Dual Thrusters (A+D / SPACE Soft Touchdown)",
+                perfectLevel: " (PERFECT LEVEL)",
+                perfectTitle: "🎯 SEMI-CIRCLE 180° PERFECT TOUCHDOWN!",
+                perfectDesc: (r, p, t, g) => `Lateral roll recovery & dual-thruster pitch leveling successful!<br>Attitude Error: Roll <b>${r}°</b>, Pitch <b>${p}°</b> (Total ${t}°)<br>Impact Force: <b>${g} G</b> (Suspension absorbed)`,
+                hardTitle: "⚠️ HARD LANDING",
+                hardDesc: (r, p, t, g) => `Touchdown achieved, but pitch was tilted or descent rate was fast.<br>Roll: <b>${r}°</b>, Pitch: <b>${p}°</b> (Total ${t}°)<br>Impact Force: <b>${g} G</b>`,
+                crashTitle: "💥 CRASH & FLIP",
+                crashDesc: (r, p, t, g) => `Failed to level pitch or descent speed was too fast!<br>Roll: <b>${r}°</b>, Pitch: <b>${p}°</b> (Total ${t}°)<br>Impact Force: <b>${g} G</b>`,
+                retryBtn: "Try Again (R)",
+                airborneToast: "🚨 Press W / ▲ for 180° roll, A / D (◀ / ▶) for pitch balance!"
+            }
+        };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentLang = urlParams.get("lang") || "en";
+
+        function applyLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem("roadster_lang", lang);
+            const t = i18n[lang];
+
+            const btnLang = document.getElementById("btn-lang-toggle");
+            if (btnLang) btnLang.innerText = t.langBtn;
+
+            const btnManual = document.getElementById("btn-manual");
+            if (btnManual) btnManual.innerText = t.manualMode;
+            const btnAI = document.getElementById("btn-ai");
+            if (btnAI) btnAI.innerText = t.aiMode;
+            const btnVS = document.getElementById("btn-vs");
+            if (btnVS) btnVS.innerText = t.vsMode;
+
+            const toggleDock = document.getElementById("btn-toggle-dock");
+            if (toggleDock) toggleDock.innerText = t.toggleDock;
+            const btnReset = document.getElementById("btn-reset");
+            if (btnReset) btnReset.innerText = t.restartBtn;
+
+            const speedLabel = document.querySelector(".speed-label");
+            if (speedLabel) speedLabel.innerText = t.speedLabel;
+
+            const speedButtons = document.querySelectorAll(".speed-btn");
+            if (speedButtons.length >= 4) {
+                speedButtons[0].innerText = t.speedRec;
+                speedButtons[3].innerText = t.speedLive;
+            }
+
+            const statusToast = document.getElementById("status-toast");
+            if (statusToast) statusToast.innerText = t.statusInverted;
+
+            const btnRoll = document.getElementById("btn-roll-up");
+            if (btnRoll) {
+                btnRoll.title = t.btnRollTitle;
+                const lbl = btnRoll.querySelector(".t-label");
+                const sub = btnRoll.querySelector(".t-sub");
+                if (lbl) lbl.innerText = t.btnRollLabel;
+                if (sub) sub.innerText = t.btnRollSub;
+            }
+
+            const btnFront = document.getElementById("btn-thrust-front");
+            if (btnFront) {
+                btnFront.title = t.btnFrontTitle;
+                const lbl = btnFront.querySelector(".t-label");
+                const sub = btnFront.querySelector(".t-sub");
+                if (lbl) lbl.innerText = t.btnFrontLabel;
+                if (sub) sub.innerText = t.btnFrontSub;
+            }
+
+            const btnBoth = document.getElementById("btn-thrust-both");
+            if (btnBoth) {
+                btnBoth.title = t.btnBothTitle;
+                const lbl = btnBoth.querySelector(".t-label");
+                const sub = btnBoth.querySelector(".t-sub");
+                if (lbl) lbl.innerText = t.btnBothLabel;
+                if (sub) sub.innerText = t.btnBothSub;
+            }
+
+            const btnRear = document.getElementById("btn-thrust-rear");
+            if (btnRear) {
+                btnRear.title = t.btnRearTitle;
+                const lbl = btnRear.querySelector(".t-label");
+                const sub = btnRear.querySelector(".t-sub");
+                if (lbl) lbl.innerText = t.btnRearLabel;
+                if (sub) sub.innerText = t.btnRearSub;
+            }
+
+            const keyGuide = document.getElementById("key-guide");
+            if (keyGuide) {
+                keyGuide.innerHTML = `
+                    <div><span class="key-tag">W / S (▲ / ▼)</span> ${t.keyGuideRoll}</div>
+                    <div><span class="key-tag">A / D (◀ / ▶)</span> ${t.keyGuidePitch}</div>
+                    <div><span class="key-tag">A+D / SPACE</span> ${t.keyGuideBoth}</div>
+                `;
+            }
+
+            const modalRestart = document.getElementById("modal-restart-btn");
+            if (modalRestart) modalRestart.innerText = t.retryBtn;
+        }
+
+        // Speed buttons
+        document.querySelectorAll(".speed-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".speed-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                timeScale = parseFloat(btn.dataset.speed);
+            });
+        });
+
+        // Key states (상하 180도 롤 회전 + 좌우 하부 수평 평형 제어)
+        const keys = { 
+            rollUp: false,     // W / ArrowUp: 180도 롤 회전 (자세 복원)
+            rollDown: false,   // S / ArrowDown: 반대 방향 롤 회전
+            pitchFront: false, // A / ArrowLeft: 앞머리 밑 분사 (좌측 앞머리 상승 / 피치 제어)
+            pitchRear: false,  // D / ArrowRight: 뒷부분 밑 분사 (우측 뒷부분 상승 / 피치 제어)
+            both: false        // Space: 앞뒤 동시 분사 (수평 평형 유지 + 소프트 착지)
+        };
+
+        window.addEventListener("keydown", (e) => {
+            // 상하 조작: 180도 롤 회전 (W / S, ▲ / ▼)
+            if (e.code === "KeyW" || e.code === "ArrowUp") { keys.rollUp = true; e.preventDefault(); }
+            if (e.code === "KeyS" || e.code === "ArrowDown") { keys.rollDown = true; e.preventDefault(); }
+            // 좌우 조작: 차체 수평 피치 제어 (A / D, ◀ / ▶)
+            if (e.code === "KeyA" || e.code === "ArrowLeft") { keys.pitchFront = true; e.preventDefault(); }
+            if (e.code === "KeyD" || e.code === "ArrowRight") { keys.pitchRear = true; e.preventDefault(); }
+            // 동시 역추진: 스페이스바
+            if (e.code === "Space") { keys.both = true; e.preventDefault(); }
+            if (e.code === "KeyR") resetGame();
+        });
+
+        window.addEventListener("keyup", (e) => {
+            if (e.code === "KeyW" || e.code === "ArrowUp") keys.rollUp = false;
+            if (e.code === "KeyS" || e.code === "ArrowDown") keys.rollDown = false;
+            if (e.code === "KeyA" || e.code === "ArrowLeft") keys.pitchFront = false;
+            if (e.code === "KeyD" || e.code === "ArrowRight") keys.pitchRear = false;
+            if (e.code === "Space") keys.both = false;
+        });
+
+        // 온스크린 버튼 마우스 & 터치 홀드 바인딩 (누르고 있는 동안 분사)
+        function bindHoldBtn(id, onDown, onUp) {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+            btn.addEventListener("mousedown", (e) => { e.preventDefault(); onDown(); });
+            btn.addEventListener("touchstart", (e) => { e.preventDefault(); onDown(); });
+            btn.addEventListener("mouseup", (e) => { e.preventDefault(); onUp(); });
+            btn.addEventListener("mouseleave", () => onUp());
+            btn.addEventListener("touchend", () => onUp());
+            btn.addEventListener("touchcancel", () => onUp());
+        }
+
+        bindHoldBtn("btn-roll-up", () => { keys.rollUp = true; }, () => { keys.rollUp = false; });
+        bindHoldBtn("btn-thrust-front", () => { keys.pitchFront = true; }, () => { keys.pitchFront = false; });
+        bindHoldBtn("btn-thrust-rear", () => { keys.pitchRear = true; }, () => { keys.pitchRear = false; });
+        bindHoldBtn("btn-thrust-both", () => { keys.both = true; }, () => { keys.both = false; });
+
+        // 온스크린 컨트롤러 패널 토글 & 닫기 기능
+        const toggleDockBtn = document.getElementById("btn-toggle-dock");
+        const closeDockBtn = document.getElementById("btn-close-dock");
+        const thrusterDock = document.getElementById("thruster-dock");
+
+        function setDockVisible(show) {
+            if (!thrusterDock) return;
+            thrusterDock.style.display = show ? "flex" : "none";
+            if (toggleDockBtn) toggleDockBtn.classList.toggle("active", show);
+        }
+
+        if (toggleDockBtn) {
+            toggleDockBtn.addEventListener("click", () => {
+                const isCurrentlyHidden = thrusterDock.style.display === "none";
+                setDockVisible(isCurrentlyHidden);
+            });
+        }
+        if (closeDockBtn) {
+            closeDockBtn.addEventListener("click", () => {
+                setDockVisible(false);
+            });
+        }
+
+        // 언어 토글 버튼 이벤트 바인딩
+        const langToggleBtn = document.getElementById("btn-lang-toggle");
+        if (langToggleBtn) {
+            langToggleBtn.addEventListener("click", () => {
+                applyLanguage(currentLang === "ko" ? "en" : "ko");
+            });
+        }
+        // 초기 언어 적용
+        applyLanguage(currentLang);
+
+        // ========================================================
+        // 완벽한 반원(Semi-Circle) 메가 램프 트랙 시스템
+        // - 화면 우측에 우뚝 솟아 반원을 그리며 180도 완전히 거꾸로 뒤집힘
+        // ========================================================
+        let groundY;
+        let rampCenterX;
+        let rampRadius;
+        let lzX; // 활주로 착지 목표 지점 (Landing Zone X)
+
+        function buildRampCurve() {
+            groundY = H - 90;
+            // 반원의 반지름 R: 천장(상단 배너)과의 헤드룸(약 220px)을 넉넉히 확보하여 화면 상단 이탈 방지
+            rampRadius = Math.min((H - 240) * 0.40, W * 0.15, 200);
+            // 반원의 수평 중심 X: 우측 벽에 너무 붙지 않도록 적절히 배치
+            rampCenterX = Math.min(W * 0.72, W - rampRadius - 50);
+            // 활주로 목표 착지 지점: 좌측 계기판과 겹치지 않고 화면 중앙-좌측에 안전하게 위치
+            lzX = Math.max(240, W * 0.32);
+        }
+        buildRampCurve();
+
+        // 순수 원기하학 기반 반원 궤도 계산
+        // progress: 0.0 (지면 진입) ~ 1.0 (반원 꼭대기 180도 완전 인버티드)
+        function getSemiCircleProgress(progress) {
+            // angleRad: 0 (지면, 수평 오른쪽) -> π/2 (90도 수직 상승) -> π (180도 완전 거꾸로)
+            const theta = progress * Math.PI;
+
+            // 중심 (rampCenterX, groundY - rampRadius)
+            // theta = 0: x = rampCenterX, y = groundY, dx > 0, dy = 0 (각도 0 rad)
+            // theta = π/2: x = rampCenterX + R, y = groundY - R, dx = 0, dy < 0 (각도 -π/2 rad)
+            // theta = π: x = rampCenterX, y = groundY - 2*R, dx < 0, dy = 0 (각도 -π rad, 완전 180도!)
+            const x = rampCenterX + rampRadius * Math.sin(theta);
+            const y = groundY - rampRadius * (1 - Math.cos(theta));
+
+            // 접선 방향 각도 (미분값)
+            // dx/dtheta = R * cos(theta)
+            // dy/dtheta = -R * sin(theta)
+            const dx = Math.cos(theta);
+            const dy = -Math.sin(theta);
+            const angle = Math.atan2(dy, dx);
+
+            return { x, y, angle };
+        }
+
+        // ==========================================
+        // 풍성한 볼륨의 극사실적 화이트 스팀 파티클 (Cold-Gas Cloud)
+        // ==========================================
+        class CloudParticle {
+            constructor(x, y, vx, vy, size, life, isThick = false) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.size = size;
+                this.maxLife = life;
+                this.life = life;
+                this.isThick = isThick;
+                this.rot = Math.random() * Math.PI * 2;
+                this.rotSpeed = (Math.random() - 0.5) * 1.5;
+            }
+
+            update(dt) {
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+                this.vx *= 0.95;
+                this.vy *= 0.95;
+                this.size += 26 * dt;
+                this.rot += this.rotSpeed * dt;
+                this.life -= dt;
+            }
+
+            draw(ctx) {
+                const alpha = Math.max(0, this.life / this.maxLife);
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rot);
+
+                const grad = ctx.createRadialGradient(0, 0, this.size * 0.1, 0, 0, this.size);
+                if (this.isThick) {
+                    grad.addColorStop(0, `rgba(255, 255, 255, ${alpha * 0.9})`);
+                    grad.addColorStop(0.45, `rgba(235, 243, 252, ${alpha * 0.65})`);
+                    grad.addColorStop(0.8, `rgba(205, 225, 245, ${alpha * 0.25})`);
+                    grad.addColorStop(1, `rgba(200, 220, 240, 0)`);
+                } else {
+                    grad.addColorStop(0, `rgba(240, 248, 255, ${alpha * 0.7})`);
+                    grad.addColorStop(0.5, `rgba(215, 235, 255, ${alpha * 0.35})`);
+                    grad.addColorStop(1, `rgba(200, 220, 255, 0)`);
+                }
+
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        const particles = [];
+
+        function emitSteam(x, y, angle, speed, count = 3, thick = true) {
+            for (let i = 0; i < count; i++) {
+                const spread = (Math.random() - 0.5) * 0.5;
+                const spd = speed * (0.8 + Math.random() * 0.4);
+                const vx = Math.cos(angle + spread) * spd;
+                const vy = Math.sin(angle + spread) * spd;
+                particles.push(new CloudParticle(
+                    x + (Math.random() - 0.5) * 5,
+                    y + (Math.random() - 0.5) * 5,
+                    vx, vy,
+                    thick ? 14 + Math.random() * 8 : 8 + Math.random() * 5,
+                    thick ? 1.0 + Math.random() * 0.5 : 0.5 + Math.random() * 0.3,
+                    thick
+                ));
+            }
+        }
+
+        // ==========================================
+        // Tesla Roadster 차량 객체
+        // ==========================================
+        // ==========================================
+        // Tesla Roadster 차량 객체 (3D 측면 롤 회전 & 역추진)
+        // ==========================================
+        class Roadster {
+            constructor(isAI = false, label = "PLAYER") {
+                this.isAI = isAI;
+                this.label = label;
+                this.reset();
+            }
+
+            reset() {
+                this.x = 20;
+                this.y = groundY - 14;
+                this.rampT = 0;
+                this.vx = 22; // 지면 가속 전진 속도
+                this.vy = 0;
+
+                // 2축 자세각: 피치(진행각도) 및 롤(좌우 180도 회전축)
+                this.pitch = 0;       // 진행 방향 피치 각도
+                this.pitchOmega = 0;
+                this.roll = 0;        // ★ 좌/우 롤 회전각 (0: 정상, Math.PI: 180도 완전 뒤집힘)
+                this.rollOmega = 0;   // 롤 각속도
+
+                this.heading = 1;     // 1: 우측 주행, -1: 좌측 활주로 복귀 비행
+                this.tank = 100.0;
+                this.state = "RUN";   // RUN -> RAMP -> INVERTED_AIRBORNE -> TOUCHDOWN
+                this.finished = false;
+                this.impactG = 1.0;
+                this.landingAngleDeg = 0;
+
+                // ★ 측면 스러스터(좌/우 180도 롤) & 하부 스러스터(앞/뒤 피치 수평 평형)
+                this.thrustLeft = false;   // 좌측면 스러스터 (A/◀): 180° 시계방향 롤 회전
+                this.thrustRight = false;  // 우측면 스러스터 (D/▶): 반시계방향 롤 회전
+                this.thrustFront = false;  // 앞부분 밑 스러스터 (W/Q): 앞머리 상승 / 피치 조절
+                this.thrustRear = false;   // 뒷부분 밑 스러스터 (S/E): 뒷부분 상승 / 피치 조절
+                this.thrustBoth = false;   // 앞뒤 동시 분사 (SPACE / W+S): 수평 평형 유지 + 소프트 역추진
+
+                this.trail = [];
+            }
+
+            update(dt) {
+                if (this.finished) return;
+
+                // 1. 지면 고속 질주 (왼쪽 -> 반원 램프 진입)
+                if (this.state === "RUN") {
+                    this.x += this.vx * dt * 40;
+                    this.y = groundY - 14;
+                    this.pitch = 0;
+                    this.roll = 0;
+                    this.heading = 1;
+
+                    if (this.x >= rampCenterX) {
+                        this.state = "RAMP";
+                        this.rampT = 0;
+                    }
+                    return;
+                }
+
+                // 2. 반원(Semi-Circle) 루프 궤도를 타고 180도 뒤집어지는 단계
+                if (this.state === "RAMP") {
+                    this.rampT += dt * 0.95; // 매끄러운 반원 상승
+                    if (this.rampT >= 1.0) {
+                        this.rampT = 1.0;
+                        const pt = getSemiCircleProgress(1.0);
+                        this.x = pt.x;
+                        this.y = pt.y + 14; // 반원 천장 아래에 매달림
+
+                        // 반원 최고점 이탈 -> 공중 진입!
+                        this.state = "INVERTED_AIRBORNE";
+                        this.heading = -1;       // ★ 왼쪽 활주로를 향해 비행!
+                        this.pitch = -0.15;      // ★ 앞머리가 약간 내려간 상태(-8.5°)로 진입 -> 수평 평형 제어 필요!
+                        this.pitchOmega = 0.0;
+                        this.roll = Math.PI;     // ★ 180도 거꾸로 뒤집힌 상태 (바퀴가 하늘, 지붕이 바닥!)
+                        this.rollOmega = 0.0;
+
+                        // 화면 밖으로 벗어나지 않도록 목표 착지 구역(lzX)을 향한 최적 탄도 속도 계산
+                        const flightDist = rampCenterX - lzX;
+                        // 충분한 반응 시간과 우아한 체공 포물선 (약 2.0초 체공)
+                        this.vx = -Math.min(9.0, Math.max(5.0, flightDist / (2.1 * 32)));
+                        this.vy = -8.5; // 체공 시간을 여유롭게 확보하여 유저의 조작 및 착지 성공률 극대화
+
+                        if (!this.isAI) {
+                            showToast(i18n[currentLang].airborneToast);
+                        }
+                        return;
+                    }
+
+                    const pt = getSemiCircleProgress(this.rampT);
+                    this.pitch = pt.angle;
+                    this.roll = 0;
+                    this.x = pt.x + Math.sin(pt.angle) * 14;
+                    this.y = pt.y - Math.cos(pt.angle) * 14;
+                    return;
+                }
+
+                // 3. 공중 체공 단계: 롤 180도 복원 & 앞/뒤 하부 분사로 수평 평형 유지 & 동시 역추진 착지!
+                if (this.state === "INVERTED_AIRBORNE") {
+                    this.trail.push({ x: this.x, y: this.y });
+                    if (this.trail.length > 35) this.trail.shift();
+
+                    if (this.isAI) {
+                        this.runAIController();
+                    }
+
+                    const gravity = 15.5;
+                    const rcsRollPower = 52.0;  // 롤 회전 토크
+                    const pitchPower = 22.0;    // 앞/뒤 하부 분사 피치 토크
+                    const halfLiftPower = 22.0; // 단일 하부 노즐 분사 부력 (동시 분사 시 44.0)
+
+                    let rollTorque = 0;
+                    let pitchTorque = 0;
+                    let thrustY = 0;
+
+                    // 앞뒤 분사 활성화 상태 판정
+                    const fireFront = this.thrustFront || this.thrustBoth;
+                    const fireRear = this.thrustRear || this.thrustBoth;
+                    const fireBoth = fireFront && fireRear;
+
+                    if (this.tank > 0) {
+                        const cosR = Math.cos(this.roll);
+                        const isUpright = cosR > 0.1; // 바퀴가 바닥을 향했을 때 하부 노즐이 지면을 향함
+
+                        // ★ 1. 좌측면 스러스터 분사 (A / ◀): 차체를 180도에서 0도로 시계방향 롤 회전!
+                        if (this.thrustLeft) {
+                            rollTorque -= rcsRollPower;
+                            this.tank -= 6.5 * dt;
+                            emitSteam(this.x, this.y - 12 * cosR, -Math.PI / 2, 380, 6, true);
+                        }
+
+                        // ★ 2. 우측면 스러스터 분사 (D / ▶): 차체를 반시계방향 롤 회전
+                        if (this.thrustRight) {
+                            rollTorque += rcsRollPower;
+                            this.tank -= 6.5 * dt;
+                            emitSteam(this.x, this.y + 12 * cosR, Math.PI / 2, 380, 6, true);
+                        }
+
+                        // ★ 3. 앞부분 밑 스러스터 분사 (W / Q / 온스크린 앞 버튼): 앞머리 상승
+                        if (fireFront) {
+                            this.tank -= (fireBoth ? 8.5 : 9.5) * dt;
+                            // 차체가 왼쪽으로 가고 있으므로, 앞머리(왼쪽) 밑에서 뿜으면 앞머리가 들림 (pitch 증가 토크)
+                            pitchTorque += pitchPower * cosR;
+
+                            if (isUpright) {
+                                thrustY -= halfLiftPower * cosR;
+                            }
+
+                            // 앞부분 하부 노즐 증기 분출 (로컬 x = -18)
+                            const fx = this.x - 18 * Math.cos(this.pitch);
+                            const fy = this.y + 8 * cosR - 18 * Math.sin(this.pitch);
+                            emitSteam(fx, fy, Math.PI / 2, 440, 6, true);
+                        }
+
+                        // ★ 4. 뒷부분 밑 스러스터 분사 (S / E / 온스크린 뒤 버튼): 뒷부분 상승
+                        if (fireRear) {
+                            this.tank -= (fireBoth ? 8.5 : 9.5) * dt;
+                            // 뒷부분(오른쪽) 밑에서 뿜으면 뒷부분이 들림 (pitch 감소 토크)
+                            pitchTorque -= pitchPower * cosR;
+
+                            if (isUpright) {
+                                thrustY -= halfLiftPower * cosR;
+                            }
+
+                            // 뒷부분 하부 노즐 증기 분출 (로컬 x = +18)
+                            const rx = this.x + 18 * Math.cos(this.pitch);
+                            const ry = this.y + 8 * cosR + 18 * Math.sin(this.pitch);
+                            emitSteam(rx, ry, Math.PI / 2, 440, 6, true);
+                        }
+
+                        // ★ 5. 두 버튼 동시 분사 시 (W+S 또는 SPACE): 토크는 상쇄(수평 유지) + 수직 역추진 감속 극대화!
+                        if (fireBoth) {
+                            // 착지 직전 바닥 충돌 시 주변으로 퍼지는 충격파 연무
+                            const alt = Math.max(0, groundY - 14 - this.y);
+                            if (alt < 90) {
+                                emitSteam(this.x - 28, groundY - 4, Math.PI, 280, 4, true);
+                                emitSteam(this.x + 28, groundY - 4, 0, 280, 4, true);
+                            }
+                        }
+                    }
+                    this.tank = Math.max(0, this.tank);
+
+                    // 롤(Roll) 각속도 적분 및 조작 반응성 최적화
+                    this.rollOmega += rollTorque * dt;
+                    if (!this.thrustLeft && !this.thrustRight) {
+                        this.rollOmega *= 0.82; // 빠른 각속도 정지
+                        // 수평(0.0°) 근처 자동 스냅 보조 (약 23도 이내에서 키를 떼면 수평으로 착 달라붙음)
+                        if (Math.abs(this.roll) < 0.40) {
+                            this.roll += (0.0 - this.roll) * dt * 14.0;
+                            this.rollOmega *= 0.65;
+                        }
+                    } else {
+                        this.rollOmega *= 0.94;
+                    }
+                    this.roll += this.rollOmega * dt;
+                    if (this.roll < 0) { this.roll = 0; this.rollOmega = 0; }
+                    else if (this.roll > Math.PI * 1.5) { this.roll = Math.PI * 1.5; this.rollOmega = 0; }
+
+                    // 피치(Pitch) 각속도 적분 및 수평 평형 안정화
+                    this.pitchOmega += pitchTorque * dt;
+                    if (!fireFront && !fireRear) {
+                        this.pitchOmega *= 0.86; // 조작 없을 때 감속
+                        // 수평(0.0°) 근처 자동 스냅 (미세 평형 보조)
+                        if (Math.abs(this.pitch) < 0.12) {
+                            this.pitch += (0.0 - this.pitch) * dt * 6.0;
+                            this.pitchOmega *= 0.75;
+                        }
+                    } else {
+                        this.pitchOmega *= 0.94;
+                    }
+                    this.pitch += this.pitchOmega * dt;
+                    // 피치 범위 제한 (±45°)
+                    if (this.pitch > 0.78) { this.pitch = 0.78; this.pitchOmega = 0; }
+                    if (this.pitch < -0.78) { this.pitch = -0.78; this.pitchOmega = 0; }
+
+                    // 비행 물리 이동
+                    this.vy += (gravity + thrustY) * dt;
+
+                    // 지면 접근 시 수평 감속 (오버슈트 및 화면 좌측 이탈 방지)
+                    const alt = Math.max(0, groundY - 14 - this.y);
+                    if (alt < 120) {
+                        this.vx *= 0.96;
+                    } else {
+                        this.vx *= 0.998;
+                    }
+
+                    this.x += this.vx * dt * 32;
+                    this.y += this.vy * dt * 32;
+
+                    // 화면 경계 안전 보호 클램핑 (상/좌/우 화면 밖 이탈 절대 방지)
+                    if (this.x < 80) {
+                        this.x = 80;
+                        this.vx = Math.max(0, this.vx);
+                    } else if (this.x > W - 50) {
+                        this.x = W - 50;
+                        this.vx = Math.min(0, this.vx);
+                    }
+                    if (this.y < 50) {
+                        this.y = 50;
+                        this.vy = Math.max(0, this.vy);
+                    }
+
+                    // 지면 착지 판정
+                    if (this.y >= groundY - 14) {
+                        this.y = groundY - 14;
+                        this.handleTouchdown();
+                    }
+                }
+            }
+
+            // 고성능 AI 오토파일럿 두뇌 (180도 롤 복원 & 앞/뒤 하부 분사 수평 평형 & 무결점 터치다운)
+            runAIController() {
+                // 1. 좌/우측 스러스터를 이용한 180도 롤 회전 완벽 복원 (Critical Damped PD Controller)
+                const rollError = 0.0 - this.roll; // 음수: 롤 각도를 0으로 줄여야 함
+                const kp_roll = 38.0;
+                const kd_roll = 11.0;
+                const rollCmd = rollError * kp_roll - this.rollOmega * kd_roll;
+
+                if (rollCmd < -0.15) {
+                    this.thrustLeft = true;
+                    this.thrustRight = false;
+                } else if (rollCmd > 0.15) {
+                    this.thrustLeft = false;
+                    this.thrustRight = true;
+                } else {
+                    this.thrustLeft = false;
+                    this.thrustRight = false;
+                }
+
+                // 2. 앞/뒤 하부 스러스터로 수평 평형(Pitch) 유지 및 역추진 착지 제어
+                const pitchError = 0.0 - this.pitch;
+                const kp_pitch = 22.0;
+                const kd_pitch = 7.0;
+                const pitchCmd = pitchError * kp_pitch - this.pitchOmega * kd_pitch;
+
+                const alt = Math.max(0, groundY - 14 - this.y);
+                const isUpright = Math.abs(this.roll) < 0.40; // 롤 자세 복원 완료 여부 판정
+                const safeDecel = 24.0;
+                const targetVy = Math.min(10.0, Math.sqrt(2 * safeDecel * Math.max(0, (alt - 15) / 32)) + 0.4);
+                const needBraking = isUpright && (this.vy > targetVy);
+
+                if (needBraking) {
+                    // 강하 감속 시: 기본적으로 앞뒤 동시 분사하되, 피치 오차가 발생하면 비대칭 보정!
+                    if (pitchCmd > 0.35) {
+                        this.thrustFront = true;
+                        this.thrustRear = false;
+                        this.thrustBoth = false;
+                    } else if (pitchCmd < -0.35) {
+                        this.thrustFront = false;
+                        this.thrustRear = true;
+                        this.thrustBoth = false;
+                    } else {
+                        this.thrustFront = false;
+                        this.thrustRear = false;
+                        this.thrustBoth = true; // 완벽한 수평 동시 분사로 부드러운 터치다운!
+                    }
+                } else {
+                    // 평상시 공중 체공 중: 피치 수평 평형만 정밀하게 유지
+                    if (pitchCmd > 0.25) {
+                        this.thrustFront = true;
+                        this.thrustRear = false;
+                        this.thrustBoth = false;
+                    } else if (pitchCmd < -0.25) {
+                        this.thrustFront = false;
+                        this.thrustRear = true;
+                        this.thrustBoth = false;
+                    } else {
+                        this.thrustFront = false;
+                        this.thrustRear = false;
+                        this.thrustBoth = false;
+                    }
+                }
+            }
+
+            handleTouchdown() {
+                this.finished = true;
+                this.state = "TOUCHDOWN";
+
+                let rollDeg = Math.abs((this.roll * 180 / Math.PI) % 360);
+                if (rollDeg > 180) rollDeg = 360 - rollDeg;
+
+                let pitchDeg = Math.abs((this.pitch * 180 / Math.PI) % 360);
+                if (pitchDeg > 180) pitchDeg = 360 - pitchDeg;
+
+                this.rollDeg = rollDeg.toFixed(1);
+                this.pitchDeg = pitchDeg.toFixed(1);
+                const totalDeg = Math.hypot(rollDeg, pitchDeg);
+                this.landingAngleDeg = totalDeg.toFixed(1);
+
+                // 바닥 폭발적인 링 형태 착지 연기 (동영상 0:48처럼 웅장한 연무)
+                for (let i = 0; i < 45; i++) {
+                    const side = Math.random() > 0.5 ? 1 : -1;
+                    particles.push(new CloudParticle(
+                        this.x + (Math.random() - 0.5) * 50,
+                        groundY - 6,
+                        side * (140 + Math.random() * 320),
+                        -Math.random() * 80,
+                        26 + Math.random() * 20,
+                        1.5 + Math.random() * 0.8,
+                        true
+                    ));
+                }
+
+                // G-Force 계산 (완벽 착지 시 1.0 ~ 1.3 G)
+                this.impactG = (1.0 + Math.max(0, this.vy * 0.22 + totalDeg * 0.02)).toFixed(1);
+            }
+
+            draw(ctx) {
+                // 잔상 트레일
+                ctx.save();
+                for (let i = 0; i < this.trail.length; i++) {
+                    const p = this.trail[i];
+                    const alpha = (i / this.trail.length) * 0.35;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                    ctx.fillStyle = this.isAI ? `rgba(56, 189, 248, ${alpha})` : `rgba(255, 255, 255, ${alpha})`;
+                    ctx.fill();
+                }
+                ctx.restore();
+
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                if (this.state === "RUN") {
+                    this.drawCarBody(ctx, 1, 0, 0);
+                } else if (this.state === "RAMP") {
+                    ctx.rotate(this.pitch);
+                    this.drawCarBody(ctx, 1, 0, 0);
+                } else {
+                    // 공중 비행 & 착지: 왼쪽 활주로를 향해 전진
+                    ctx.scale(-1, 1); // 앞머리가 왼쪽을 향함
+                    ctx.rotate(-this.pitch); // 피치 회전 (pitch > 0: 앞머리 상승, pitch < 0: 뒷부분 상승)
+                    this.drawCarBody(ctx, 1, this.roll, this.pitch);
+                }
+
+                ctx.restore();
+            }
+
+            // ★ 3D 원근 롤(Roll) 회전 및 디테일한 차체 렌더링
+            drawCarBody(ctx, heading, roll, pitch) {
+                const cosR = Math.cos(roll);
+                const sinR = Math.sin(roll);
+                const absCos = Math.abs(cosR);
+                const isUpright = cosR >= 0;
+
+                // 차량 그림자 / 글로우
+                ctx.shadowColor = this.isAI ? "rgba(56, 189, 248, 0.7)" : "rgba(255, 255, 255, 0.6)";
+                ctx.shadowBlur = 16;
+
+                // 롤 각도에 따라 회전하는 바디 반사 그라디언트
+                const bodyGrad = ctx.createLinearGradient(0, -14 * cosR, 0, 14 * cosR);
+                if (this.isAI) {
+                    bodyGrad.addColorStop(0, isUpright ? "#1e293b" : "#0f172a");
+                    bodyGrad.addColorStop(0.5, isUpright ? "#334155" : "#1e293b");
+                    bodyGrad.addColorStop(1, isUpright ? "#0f172a" : "#020617");
+                } else {
+                    bodyGrad.addColorStop(0, isUpright ? "#ffffff" : "#334155");
+                    bodyGrad.addColorStop(0.5, isUpright ? "#f1f5f9" : "#1e293b");
+                    bodyGrad.addColorStop(1, isUpright ? "#cbd5e1" : "#0f172a");
+                }
+
+                ctx.fillStyle = bodyGrad;
+                ctx.strokeStyle = this.isAI ? "#38bdf8" : "#94a3b8";
+                ctx.lineWidth = 1.6;
+
+                // 3D 롤 회전 깊이 투영 오프셋
+                const depthY = -sinR * 14;
+
+                // 차체 측면 실루엣 (cosR에 의해 상하가 180도 부드럽게 반전됨)
+                ctx.beginPath();
+                ctx.moveTo(-36, 6 * cosR);
+                ctx.lineTo(-40, -1 * cosR);
+                ctx.lineTo(-32, -8 * cosR);
+                ctx.lineTo(-14, -13 * cosR);
+                ctx.lineTo(8, -13 * cosR);
+                ctx.lineTo(26, -5 * cosR);
+                ctx.lineTo(40, 2 * cosR);
+                ctx.lineTo(37, 7 * cosR);
+                ctx.lineTo(-36, 7 * cosR);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // ★ 3D 롤 회전 투시면 (차체가 회전할 때 지붕과 보닛의 입체 평면이 정면으로 돌아보임)
+                if (Math.abs(sinR) > 0.08) {
+                    ctx.save();
+                    ctx.fillStyle = isUpright ? "rgba(15, 23, 42, 0.75)" : "rgba(30, 41, 59, 0.85)";
+                    ctx.strokeStyle = this.isAI ? "rgba(56, 189, 248, 0.8)" : "rgba(255, 255, 255, 0.7)";
+                    ctx.lineWidth = 1.2;
+
+                    ctx.beginPath();
+                    ctx.moveTo(-32, -8 * cosR);
+                    ctx.lineTo(-14, -13 * cosR);
+                    ctx.lineTo(8, -13 * cosR);
+                    ctx.lineTo(26, -5 * cosR);
+                    // 3D 깊이 돌출 라인
+                    ctx.lineTo(24, -5 * cosR + depthY);
+                    ctx.lineTo(6, -13 * cosR + depthY);
+                    ctx.lineTo(-12, -13 * cosR + depthY);
+                    ctx.lineTo(-28, -8 * cosR + depthY);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                if (isUpright) {
+                    // [정상 상단 뷰]: 틴티드 글래스 루프 & 라이트
+                    ctx.fillStyle = "#090d16";
+                    ctx.beginPath();
+                    ctx.moveTo(-12, -11 * cosR);
+                    ctx.lineTo(6, -11 * cosR);
+                    ctx.lineTo(19, -5 * cosR);
+                    ctx.lineTo(-7, -5 * cosR);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // 헤드라이트 (앞범퍼 x=+36, 왼쪽 활주로 향함)
+                    ctx.fillStyle = "#ffffff";
+                    ctx.shadowColor = "#38bdf8";
+                    ctx.shadowBlur = 12;
+                    ctx.fillRect(36, 1 * cosR, 4, 3 * Math.max(0.3, absCos));
+
+                    // 테일램프 (뒷범퍼 x=-40)
+                    ctx.fillStyle = "#ef4444";
+                    ctx.shadowColor = "#ef4444";
+                    ctx.shadowBlur = 10;
+                    ctx.fillRect(-40, -2 * cosR, 3, 4 * Math.max(0.3, absCos));
+                } else {
+                    // [180도 뒤집힌 하부 뷰]: SpaceX 하부 언더트레이 & 배터리 팩
+                    ctx.fillStyle = "#090d16";
+                    ctx.fillRect(-26, -5 * absCos, 52, 10 * absCos);
+                    ctx.strokeStyle = "#38bdf8";
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(-26, -5 * absCos, 52, 10 * absCos);
+
+                    // 하부 중앙 4구 SpaceX 역추진 노즐 포트
+                    ctx.fillStyle = "#e2e8f0";
+                    ctx.fillRect(-16, -3 * absCos, 8, 6 * absCos);
+                    ctx.fillRect(8, -3 * absCos, 8, 6 * absCos);
+                }
+
+                // ★ 좌/우측면 스러스터 노즐 (도어 하단 장착, 롤 회전을 가하는 주체)
+                ctx.fillStyle = this.thrustLeft ? "#38bdf8" : "#475569";
+                ctx.shadowColor = "#38bdf8";
+                ctx.shadowBlur = this.thrustLeft ? 15 : 0;
+                ctx.fillRect(-8, -14 * cosR - 2, 16, 3 * Math.max(0.4, absCos));
+
+                ctx.fillStyle = this.thrustRight ? "#38bdf8" : "#475569";
+                ctx.shadowBlur = this.thrustRight ? 15 : 0;
+                ctx.fillRect(-8, 12 * cosR, 16, 3 * Math.max(0.4, absCos));
+
+                // 휠 & 타이어 (롤 각도에 따라 3D 원근 타원 변형)
+                ctx.shadowBlur = 0;
+                const wheelY = 7 * cosR;
+                const wheelRy = Math.max(2, 8 * absCos);
+
+                ctx.fillStyle = "#0b0f19";
+                ctx.strokeStyle = "#475569";
+                ctx.lineWidth = 2.5;
+
+                // 후륜
+                ctx.beginPath();
+                ctx.ellipse(-22, wheelY, 8, wheelRy, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // 전륜
+                ctx.beginPath();
+                ctx.ellipse(22, wheelY, 8, wheelRy, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // 휠 캡
+                ctx.fillStyle = "#94a3b8";
+                ctx.beginPath();
+                ctx.ellipse(-22, wheelY, 3, Math.max(1, 3 * absCos), 0, 0, Math.PI * 2);
+                ctx.ellipse(22, wheelY, 3, Math.max(1, 3 * absCos), 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // VS 모드 라벨
+                if (mode === "vs") {
+                    ctx.font = "bold 11px monospace";
+                    ctx.fillStyle = this.isAI ? "#38bdf8" : "#f43f5e";
+                    ctx.textAlign = "center";
+                    ctx.fillText(this.label, 0, -22 * cosR);
+                }
+            }
+        }
+
+        // 인스턴스 초기화
+        let player = new Roadster(false, "PLAYER");
+        let ai = new Roadster(true, "AI AUTOPILOT");
+
+        function resetGame() {
+            player.reset();
+            ai.reset();
+            particles.length = 0;
+            document.getElementById("modal").classList.remove("show");
+            hideToast();
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById("status-toast");
+            toast.innerText = msg;
+            toast.classList.add("show");
+            setTimeout(hideToast, 4000);
+        }
+
+        function hideToast() {
+            document.getElementById("status-toast").classList.remove("show");
+        }
+
+        // UI 모드 바인딩
+        const btnManual = document.getElementById("btn-manual");
+        const btnAI = document.getElementById("btn-ai");
+        const btnVS = document.getElementById("btn-vs");
+        const keyGuide = document.getElementById("key-guide");
+
+        btnManual.addEventListener("click", () => setMode("manual"));
+        btnAI.addEventListener("click", () => setMode("ai"));
+        btnVS.addEventListener("click", () => setMode("vs"));
+        document.getElementById("btn-reset").addEventListener("click", resetGame);
+        document.getElementById("modal-restart-btn").addEventListener("click", resetGame);
+
+        function setMode(m) {
+            mode = m;
+            [btnManual, btnAI, btnVS].forEach(b => b.classList.remove("active"));
+            if (m === "manual") {
+                btnManual.classList.add("active");
+                player.isAI = false;
+                keyGuide.style.opacity = "1";
+            } else if (m === "ai") {
+                btnAI.classList.add("active");
+                player.isAI = true;
+                keyGuide.style.opacity = "0.3";
+            } else {
+                btnVS.classList.add("active");
+                player.isAI = false;
+                keyGuide.style.opacity = "1";
+            }
+            resetGame();
+        }
+
+        // URL 파라미터 지원 (예: ?mode=ai&speed=0.5)
+        if (urlParams.get("mode")) {
+            setMode(urlParams.get("mode"));
+        }
+        if (urlParams.get("speed")) {
+            const spd = parseFloat(urlParams.get("speed"));
+            if (!isNaN(spd)) {
+                timeScale = spd;
+                document.querySelectorAll(".speed-btn").forEach(b => {
+                    b.classList.toggle("active", parseFloat(b.dataset.speed) === spd);
+                });
+            }
+        }
+
+        // ==========================================
+        // 완벽한 반원(Semi-Circle) 램프 및 야간 배경 렌더링
+        // ==========================================
+        function drawScene() {
+            // 1. 깊은 밤하늘 그라디언트
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+            skyGrad.addColorStop(0, "#010204");
+            skyGrad.addColorStop(0.65, "#060a12");
+            skyGrad.addColorStop(1, "#0a1120");
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            // 2. 조명 타워 (SpaceX Starbase 야간 조명)
+            ctx.save();
+            ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+            ctx.shadowColor = "rgba(56, 189, 248, 0.9)";
+            ctx.shadowBlur = 24;
+            ctx.fillRect(W * 0.45, groundY - 240, 5, 5);
+            ctx.fillRect(W * 0.78, groundY - 260, 5, 5);
+            ctx.shadowBlur = 0;
+            ctx.restore();
+
+            // 3. 반원 램프 지지대 트러스 구조 (Truss Scaffolding)
+            ctx.save();
+            ctx.strokeStyle = "rgba(100, 116, 139, 0.25)";
+            ctx.lineWidth = 1.5;
+            for (let t = 0.1; t <= 1.0; t += 0.08) {
+                const pt = getSemiCircleProgress(t);
+                ctx.beginPath();
+                ctx.moveTo(pt.x, groundY);
+                ctx.lineTo(pt.x, pt.y);
+                ctx.stroke();
+
+                if (t > 0.1) {
+                    const prevPt = getSemiCircleProgress(t - 0.08);
+                    ctx.beginPath();
+                    ctx.moveTo(prevPt.x, groundY);
+                    ctx.lineTo(pt.x, pt.y);
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+
+            // 4. 완벽한 반원(Semi-Circle) 램프 노면 렌더링
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            ctx.lineTo(rampCenterX, groundY);
+
+            // 반원 곡선 그리기
+            for (let t = 0; t <= 1.0; t += 0.01) {
+                const pt = getSemiCircleProgress(t);
+                ctx.lineTo(pt.x, pt.y);
+            }
+
+            // 레드 네온 엣지 (영상 속 시그니처 램프 라인)
+            ctx.lineWidth = 7;
+            ctx.strokeStyle = "#e82127";
+            ctx.shadowColor = "#e82127";
+            ctx.shadowBlur = 16;
+            ctx.stroke();
+
+            // 램프 상판 그레이
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.shadowBlur = 0;
+            ctx.stroke();
+            ctx.restore();
+
+            // 5. 복귀 착지 활주로 (Runway)
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            ctx.lineTo(W, groundY);
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // 착지 목표 구역 (Runway Target)
+            ctx.fillStyle = "rgba(56, 189, 248, 0.25)";
+            ctx.fillRect(lzX - 130, groundY - 2, 260, 4);
+            ctx.font = "bold 11px monospace";
+            ctx.fillStyle = "#38bdf8";
+            ctx.textAlign = "center";
+            ctx.fillText("◀ SPACEX RECOVERY TOUCHDOWN ZONE ◀", lzX, groundY + 24);
+            ctx.restore();
+        }
+
+        // ==========================================
+        // 텔레메트리 HUD 동기화
+        // ==========================================
+        function updateGauges(car) {
+            // 고도 (FT)
+            const altFt = Math.max(0, (groundY - 14 - car.y) * 0.16).toFixed(1);
+            document.getElementById("val-altitude").innerText = altFt;
+            const altPct = Math.min(1, altFt / 65);
+            document.getElementById("alt-dial").style.strokeDashoffset = 264 - (264 * altPct);
+
+            // G-Force 계산 및 게이지
+            const fireFront = car.thrustFront || car.thrustBoth;
+            const fireRear = car.thrustRear || car.thrustBoth;
+            const fireBoth = fireFront && fireRear;
+
+            let currentG = 1.0;
+            if (car.state === "RAMP") {
+                currentG = (1.2 + (car.rampT * 2.8)).toFixed(1);
+            } else if (car.state === "INVERTED_AIRBORNE") {
+                currentG = fireBoth ? "2.6" : ((fireFront || fireRear) ? "1.8" : "0.0");
+            } else if (car.state === "TOUCHDOWN") {
+                currentG = car.impactG;
+            }
+            document.getElementById("val-gforce").innerText = currentG;
+            const gPct = Math.min(1, parseFloat(currentG) / 4.0);
+            const gDial = document.getElementById("g-dial");
+            gDial.style.strokeDashoffset = 264 - (264 * gPct);
+            gDial.style.stroke = parseFloat(currentG) > 2.5 ? "#ef4444" : "#ffffff";
+
+            // 롤 및 피치 각도 표시
+            let rollDeg = Math.round((car.roll * 180 / Math.PI));
+            let pitchDeg = Math.round((car.pitch * 180 / Math.PI));
+
+            if (car.state === "RUN") {
+                document.getElementById("hud-angle-deg").innerText = "0° (GROUND)";
+            } else if (car.state === "RAMP") {
+                let rampDeg = Math.round(car.rampT * 180);
+                document.getElementById("hud-angle-deg").innerText = `${rampDeg}° (RAMP)`;
+            } else {
+                const isRollZero = Math.abs(rollDeg) < 3;
+                const isPitchZero = Math.abs(pitchDeg) < 2;
+                let attStr = `ROLL: ${Math.abs(rollDeg)}° / PITCH: ${pitchDeg >= 0 ? "+" : ""}${pitchDeg}°`;
+                if (isRollZero && isPitchZero) {
+                    attStr += i18n[currentLang].perfectLevel;
+                    document.getElementById("hud-angle-deg").style.color = "#22c55e";
+                } else {
+                    document.getElementById("hud-angle-deg").style.color = "#38bdf8";
+                }
+                document.getElementById("hud-angle-deg").innerText = attStr;
+            }
+
+            // 상단 텔레메트리
+            const speedMph = (Math.hypot(car.vx, car.vy) * 2.8).toFixed(1);
+            document.getElementById("hud-speed").innerText = `${speedMph} MPH`;
+            document.getElementById("hud-stage").innerText = car.state;
+            document.getElementById("hud-tank").innerText = `${Math.round(car.tank)}%`;
+
+            // 3D 차체 자세 인디케이터 (롤 및 피치 반영)
+            const attitudeCar = document.getElementById("attitude-car");
+            if (attitudeCar) {
+                if (car.state === "RAMP") {
+                    attitudeCar.style.transform = `rotate(${car.pitch}rad)`;
+                } else {
+                    attitudeCar.style.transform = `rotate(${-car.pitch}rad) scaleY(${Math.cos(car.roll)})`;
+                }
+            }
+
+            // ★ 탑뷰 스러스터 노즐 활성화 표시 (좌/우측면 및 앞/뒤 하부)
+            const activeColor = "#38bdf8";
+            const inactiveColor = "#334155";
+            document.getElementById("rcs-left-1").setAttribute("fill", car.thrustLeft ? activeColor : inactiveColor);
+            document.getElementById("rcs-left-2").setAttribute("fill", car.thrustLeft ? activeColor : inactiveColor);
+            document.getElementById("rcs-right-1").setAttribute("fill", car.thrustRight ? activeColor : inactiveColor);
+            document.getElementById("rcs-right-2").setAttribute("fill", car.thrustRight ? activeColor : inactiveColor);
+            document.getElementById("rcs-front").setAttribute("fill", fireFront ? "#f97316" : inactiveColor);
+            document.getElementById("rcs-rear").setAttribute("fill", fireRear ? "#f97316" : inactiveColor);
+
+            // 온스크린 컨트롤러 버튼 활성화 클래스 동기화
+            const btnRollUp = document.getElementById("btn-roll-up");
+            const btnFront = document.getElementById("btn-thrust-front");
+            const btnRear = document.getElementById("btn-thrust-rear");
+            const btnBoth = document.getElementById("btn-thrust-both");
+            if (btnRollUp) btnRollUp.classList.toggle("active", car.thrustLeft);
+            if (btnFront) btnFront.classList.toggle("active", fireFront && !fireBoth);
+            if (btnRear) btnRear.classList.toggle("active", fireRear && !fireBoth);
+            if (btnBoth) btnBoth.classList.toggle("active", fireBoth);
+        }
+
+        function checkResultModal(car) {
+            const modal = document.getElementById("modal");
+            const title = document.getElementById("modal-title");
+            const desc = document.getElementById("modal-desc");
+            const t = i18n[currentLang];
+
+            if (car.finished && !modal.classList.contains("show")) {
+                modal.classList.add("show");
+
+                const isPerfect = car.impactG <= 1.8 && car.landingAngleDeg <= 10;
+                const isAcceptable = car.impactG <= 3.2 && car.landingAngleDeg <= 25;
+
+                if (isPerfect) {
+                    modal.className = "modal show success";
+                    title.innerText = t.perfectTitle;
+                    title.style.color = "#22c55e";
+                    desc.innerHTML = t.perfectDesc(car.rollDeg, car.pitchDeg, car.landingAngleDeg, car.impactG);
+                } else if (isAcceptable) {
+                    modal.className = "modal show";
+                    title.innerText = t.hardTitle;
+                    title.style.color = "#f59e0b";
+                    desc.innerHTML = t.hardDesc(car.rollDeg, car.pitchDeg, car.landingAngleDeg, car.impactG);
+                } else {
+                    modal.className = "modal show crash";
+                    title.innerText = t.crashTitle;
+                    title.style.color = "#ef4444";
+                    desc.innerHTML = t.crashDesc(car.rollDeg, car.pitchDeg, car.landingAngleDeg, car.impactG);
+                }
+            }
+        }
+
+        // ==========================================
+        // 메인 애니메이션 루프
+        // ==========================================
+        let lastTime = performance.now();
+
+        function loop(timestamp) {
+            let realDt = (timestamp - lastTime) / 1000;
+            if (realDt > 0.05) realDt = 0.05;
+            lastTime = timestamp;
+
+            const dt = realDt * timeScale;
+
+            // 배경 및 반원 램프 그리기
+            drawScene();
+
+            // 파티클 업데이트 & 그리기
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update(dt);
+                particles[i].draw(ctx);
+                if (particles[i].life <= 0) particles.splice(i, 1);
+            }
+
+            // 모드별 물리 실행
+            if (mode === "manual") {
+                const simultaneousPitch = keys.pitchFront && keys.pitchRear;
+                player.thrustLeft = keys.rollUp;
+                player.thrustRight = keys.rollDown;
+                player.thrustFront = keys.pitchFront;
+                player.thrustRear = keys.pitchRear;
+                player.thrustBoth = keys.both || simultaneousPitch;
+
+                player.update(dt);
+                player.draw(ctx);
+                updateGauges(player);
+                checkResultModal(player);
+            } else if (mode === "ai") {
+                player.update(dt);
+                player.draw(ctx);
+                updateGauges(player);
+                checkResultModal(player);
+            } else if (mode === "vs") {
+                const simultaneousPitch = keys.pitchFront && keys.pitchRear;
+                player.thrustLeft = keys.rollUp;
+                player.thrustRight = keys.rollDown;
+                player.thrustFront = keys.pitchFront;
+                player.thrustRear = keys.pitchRear;
+                player.thrustBoth = keys.both || simultaneousPitch;
+
+                player.update(dt);
+                ai.update(dt);
+
+                player.draw(ctx);
+                ai.draw(ctx);
+                updateGauges(player);
+
+                if (player.finished && ai.finished) {
+                    checkResultModal(player);
+                }
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>

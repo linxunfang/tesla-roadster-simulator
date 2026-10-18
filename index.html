@@ -585,6 +585,7 @@
         </div>
 
         <div class="header-actions">
+            <button class="btn-toggle-hud" id="btn-lang-toggle" title="Switch Language (English / 한국어)">🌐 English</button>
             <button class="btn-toggle-hud active" id="btn-toggle-dock" title="온스크린 컨트롤러 버튼 숨김/표시">🎮 컨트롤러 패널</button>
             <button class="btn-restart" id="btn-reset">🔄 재도약 (R)</button>
         </div>
@@ -736,6 +737,169 @@
         let mode = "manual"; // manual, ai, vs
         let timeScale = 0.35; // 슬로우 모션 (기본 0.35x)
 
+        // ==========================================
+        // 다국어 (i18n) 시스템 (한국어 / English 지원)
+        // ==========================================
+        const i18n = {
+            ko: {
+                langBtn: "🌐 English",
+                manualMode: "🕹️ 수동 착지 (Manual)",
+                aiMode: "🤖 AI 오토파일럿 (Autopilot)",
+                vsMode: "⚔️ 사람 vs AI 비교",
+                speedLabel: "SPEED:",
+                speedRec: "0.35x (추천)",
+                speedLive: "1.0x (실시간)",
+                toggleDock: "🎮 컨트롤러 패널",
+                restartBtn: "🔄 재도약 (R)",
+                statusInverted: "🚨 180° INVERTED! 상하(W / ▲)로 180° 회전하고, 좌우(A / D, ◀ / ▶)로 수평을 맞추세요!",
+                btnRollTitle: "180도 롤 회전 복원 (W / ▲)",
+                btnRollLabel: "180° 회전 (W / ▲)",
+                btnRollSub: "차체 바로세우기",
+                btnFrontTitle: "앞부분 하부 분사 (A / ◀)",
+                btnFrontLabel: "앞머리 밑 분사 (A / ◀)",
+                btnFrontSub: "앞머리 상승 / 피치 평형",
+                btnBothTitle: "앞뒤 동시 분사 (SPACE / A+D)",
+                btnBothLabel: "앞뒤 동시 분사 (SPACE / A+D)",
+                btnBothSub: "수평 평형 유지 + 소프트 착지",
+                btnRearTitle: "뒷부분 하부 분사 (D / ▶)",
+                btnRearLabel: "뒷부분 밑 분사 (D / ▶)",
+                btnRearSub: "뒷부분 상승 / 피치 평형",
+                keyGuideRoll: "180° 상하 롤 회전 (자세 복원)",
+                keyGuidePitch: "좌우 수평 제어 (앞 / 뒷부분 밑 분사)",
+                keyGuideBoth: "앞뒤 동시 분사 (수평 & 소프트 착지)",
+                perfectLevel: " (수평 완벽)",
+                perfectTitle: "🎯 SEMI-CIRCLE 180° PERFECT TOUCHDOWN!",
+                perfectDesc: (r, p, t, g) => `측면 롤 복원과 앞/뒤 하부 분사 수평 평형 완벽 성공!<br>착지 각도 오차: 롤 <b>${r}°</b>, 피치(수평) <b>${p}°</b> (종합 ${t}°)<br>착지 충격량: <b>${g} G</b> (서스펜션 완벽 흡수)`,
+                hardTitle: "⚠️ HARD LANDING",
+                hardDesc: (r, p, t, g) => `착지는 성공했으나 수평이 다소 기울어졌거나 강하 속도가 빨랐습니다.<br>롤: <b>${r}°</b>, 피치: <b>${p}°</b> (종합 ${t}°)<br>착지 충격량: <b>${g} G</b>`,
+                crashTitle: "💥 CRASH & FLIP",
+                crashDesc: (r, p, t, g) => `앞/뒤 하부 분사로 수평 평형을 잡지 못했거나 강하 속도가 너무 빨랐습니다!<br>롤: <b>${r}°</b>, 피치: <b>${p}°</b> (종합 ${t}°)<br>착지 충격량: <b>${g} G</b>`,
+                retryBtn: "다시 시도하기 (R)",
+                airborneToast: "🚨 상하(W / ▲)로 180° 회전하고, 좌우(A / D, ◀ / ▶)로 차체 수평을 맞추세요!"
+            },
+            en: {
+                langBtn: "🌐 한국어",
+                manualMode: "🕹️ Manual Landing",
+                aiMode: "🤖 AI Autopilot",
+                vsMode: "⚔️ Human vs AI",
+                speedLabel: "SPEED:",
+                speedRec: "0.35x (Rec)",
+                speedLive: "1.0x (Live)",
+                toggleDock: "🎮 Controller",
+                restartBtn: "🔄 Restart (R)",
+                statusInverted: "🚨 180° INVERTED! Press W / ▲ for 180° roll, A / D (◀ / ▶) to balance pitch!",
+                btnRollTitle: "180° Roll Recovery (W / ▲)",
+                btnRollLabel: "180° Roll (W / ▲)",
+                btnRollSub: "Right Inverted Body",
+                btnFrontTitle: "Front Bottom Thruster (A / ◀)",
+                btnFrontLabel: "Front Bottom (A / ◀)",
+                btnFrontSub: "Nose Up / Level Pitch",
+                btnBothTitle: "Dual Bottom Thrusters (SPACE / A+D)",
+                btnBothLabel: "Dual Thrusters (SPACE / A+D)",
+                btnBothSub: "Level Balance + Soft Landing",
+                btnRearTitle: "Rear Bottom Thruster (D / ▶)",
+                btnRearLabel: "Rear Bottom (D / ▶)",
+                btnRearSub: "Tail Up / Level Pitch",
+                keyGuideRoll: "180° Roll Recovery (W / S, ▲ / ▼)",
+                keyGuidePitch: "Pitch Leveling (Front / Rear Bottom: A / D, ◀ / ▶)",
+                keyGuideBoth: "Dual Thrusters (A+D / SPACE Soft Touchdown)",
+                perfectLevel: " (PERFECT LEVEL)",
+                perfectTitle: "🎯 SEMI-CIRCLE 180° PERFECT TOUCHDOWN!",
+                perfectDesc: (r, p, t, g) => `Lateral roll recovery & dual-thruster pitch leveling successful!<br>Attitude Error: Roll <b>${r}°</b>, Pitch <b>${p}°</b> (Total ${t}°)<br>Impact Force: <b>${g} G</b> (Suspension absorbed)`,
+                hardTitle: "⚠️ HARD LANDING",
+                hardDesc: (r, p, t, g) => `Touchdown achieved, but pitch was tilted or descent rate was fast.<br>Roll: <b>${r}°</b>, Pitch: <b>${p}°</b> (Total ${t}°)<br>Impact Force: <b>${g} G</b>`,
+                crashTitle: "💥 CRASH & FLIP",
+                crashDesc: (r, p, t, g) => `Failed to level pitch or descent speed was too fast!<br>Roll: <b>${r}°</b>, Pitch: <b>${p}°</b> (Total ${t}°)<br>Impact Force: <b>${g} G</b>`,
+                retryBtn: "Try Again (R)",
+                airborneToast: "🚨 Press W / ▲ for 180° roll, A / D (◀ / ▶) for pitch balance!"
+            }
+        };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentLang = urlParams.get("lang") || localStorage.getItem("roadster_lang") || "ko";
+        if (currentLang !== "en" && currentLang !== "ko") currentLang = "ko";
+
+        function applyLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem("roadster_lang", lang);
+            const t = i18n[lang];
+
+            const btnLang = document.getElementById("btn-lang-toggle");
+            if (btnLang) btnLang.innerText = t.langBtn;
+
+            const btnManual = document.getElementById("btn-manual");
+            if (btnManual) btnManual.innerText = t.manualMode;
+            const btnAI = document.getElementById("btn-ai");
+            if (btnAI) btnAI.innerText = t.aiMode;
+            const btnVS = document.getElementById("btn-vs");
+            if (btnVS) btnVS.innerText = t.vsMode;
+
+            const toggleDock = document.getElementById("btn-toggle-dock");
+            if (toggleDock) toggleDock.innerText = t.toggleDock;
+            const btnReset = document.getElementById("btn-reset");
+            if (btnReset) btnReset.innerText = t.restartBtn;
+
+            const speedLabel = document.querySelector(".speed-label");
+            if (speedLabel) speedLabel.innerText = t.speedLabel;
+
+            const speedButtons = document.querySelectorAll(".speed-btn");
+            if (speedButtons.length >= 4) {
+                speedButtons[0].innerText = t.speedRec;
+                speedButtons[3].innerText = t.speedLive;
+            }
+
+            const statusToast = document.getElementById("status-toast");
+            if (statusToast) statusToast.innerText = t.statusInverted;
+
+            const btnRoll = document.getElementById("btn-roll-up");
+            if (btnRoll) {
+                btnRoll.title = t.btnRollTitle;
+                const lbl = btnRoll.querySelector(".t-label");
+                const sub = btnRoll.querySelector(".t-sub");
+                if (lbl) lbl.innerText = t.btnRollLabel;
+                if (sub) sub.innerText = t.btnRollSub;
+            }
+
+            const btnFront = document.getElementById("btn-thrust-front");
+            if (btnFront) {
+                btnFront.title = t.btnFrontTitle;
+                const lbl = btnFront.querySelector(".t-label");
+                const sub = btnFront.querySelector(".t-sub");
+                if (lbl) lbl.innerText = t.btnFrontLabel;
+                if (sub) sub.innerText = t.btnFrontSub;
+            }
+
+            const btnBoth = document.getElementById("btn-thrust-both");
+            if (btnBoth) {
+                btnBoth.title = t.btnBothTitle;
+                const lbl = btnBoth.querySelector(".t-label");
+                const sub = btnBoth.querySelector(".t-sub");
+                if (lbl) lbl.innerText = t.btnBothLabel;
+                if (sub) sub.innerText = t.btnBothSub;
+            }
+
+            const btnRear = document.getElementById("btn-thrust-rear");
+            if (btnRear) {
+                btnRear.title = t.btnRearTitle;
+                const lbl = btnRear.querySelector(".t-label");
+                const sub = btnRear.querySelector(".t-sub");
+                if (lbl) lbl.innerText = t.btnRearLabel;
+                if (sub) sub.innerText = t.btnRearSub;
+            }
+
+            const keyGuide = document.getElementById("key-guide");
+            if (keyGuide) {
+                keyGuide.innerHTML = `
+                    <div><span class="key-tag">W / S (▲ / ▼)</span> ${t.keyGuideRoll}</div>
+                    <div><span class="key-tag">A / D (◀ / ▶)</span> ${t.keyGuidePitch}</div>
+                    <div><span class="key-tag">A+D / SPACE</span> ${t.keyGuideBoth}</div>
+                `;
+            }
+
+            const modalRestart = document.getElementById("modal-restart-btn");
+            if (modalRestart) modalRestart.innerText = t.retryBtn;
+        }
+
         // Speed buttons
         document.querySelectorAll(".speed-btn").forEach(btn => {
             btn.addEventListener("click", () => {
@@ -813,6 +977,16 @@
                 setDockVisible(false);
             });
         }
+
+        // 언어 토글 버튼 이벤트 바인딩
+        const langToggleBtn = document.getElementById("btn-lang-toggle");
+        if (langToggleBtn) {
+            langToggleBtn.addEventListener("click", () => {
+                applyLanguage(currentLang === "ko" ? "en" : "ko");
+            });
+        }
+        // 초기 언어 적용
+        applyLanguage(currentLang);
 
         // ========================================================
         // 완벽한 반원(Semi-Circle) 메가 램프 트랙 시스템
@@ -1014,7 +1188,7 @@
                         this.vy = -8.5; // 체공 시간을 여유롭게 확보하여 유저의 조작 및 착지 성공률 극대화
 
                         if (!this.isAI) {
-                            showToast("🚨 상하(W / ▲)로 180° 회전하고, 좌우(A / D, ◀ / ▶)로 차체 수평을 맞추세요!");
+                            showToast(i18n[currentLang].airborneToast);
                         }
                         return;
                     }
@@ -1515,7 +1689,6 @@
         }
 
         // URL 파라미터 지원 (예: ?mode=ai&speed=0.5)
-        const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get("mode")) {
             setMode(urlParams.get("mode"));
         }
@@ -1660,7 +1833,7 @@
                 const isPitchZero = Math.abs(pitchDeg) < 2;
                 let attStr = `ROLL: ${Math.abs(rollDeg)}° / PITCH: ${pitchDeg >= 0 ? "+" : ""}${pitchDeg}°`;
                 if (isRollZero && isPitchZero) {
-                    attStr += " (수평 완벽)";
+                    attStr += i18n[currentLang].perfectLevel;
                     document.getElementById("hud-angle-deg").style.color = "#22c55e";
                 } else {
                     document.getElementById("hud-angle-deg").style.color = "#38bdf8";
@@ -1709,6 +1882,7 @@
             const modal = document.getElementById("modal");
             const title = document.getElementById("modal-title");
             const desc = document.getElementById("modal-desc");
+            const t = i18n[currentLang];
 
             if (car.finished && !modal.classList.contains("show")) {
                 modal.classList.add("show");
@@ -1718,25 +1892,19 @@
 
                 if (isPerfect) {
                     modal.className = "modal show success";
-                    title.innerText = "🎯 SEMI-CIRCLE 180° PERFECT TOUCHDOWN!";
+                    title.innerText = t.perfectTitle;
                     title.style.color = "#22c55e";
-                    desc.innerHTML = `측면 롤 복원과 앞/뒤 하부 분사 수평 평형 완벽 성공!<br>
-                                      착지 각도 오차: 롤 <b>${car.rollDeg}°</b>, 피치(수평) <b>${car.pitchDeg}°</b> (종합 ${car.landingAngleDeg}°)<br>
-                                      착지 충격량: <b>${car.impactG} G</b> (서스펜션 완벽 흡수)`;
+                    desc.innerHTML = t.perfectDesc(car.rollDeg, car.pitchDeg, car.landingAngleDeg, car.impactG);
                 } else if (isAcceptable) {
                     modal.className = "modal show";
-                    title.innerText = "⚠️ HARD LANDING";
+                    title.innerText = t.hardTitle;
                     title.style.color = "#f59e0b";
-                    desc.innerHTML = `착지는 성공했으나 수평이 다소 기울어졌거나 강하 속도가 빨랐습니다.<br>
-                                      롤: <b>${car.rollDeg}°</b>, 피치: <b>${car.pitchDeg}°</b> (종합 ${car.landingAngleDeg}°)<br>
-                                      착지 충격량: <b>${car.impactG} G</b>`;
+                    desc.innerHTML = t.hardDesc(car.rollDeg, car.pitchDeg, car.landingAngleDeg, car.impactG);
                 } else {
                     modal.className = "modal show crash";
-                    title.innerText = "💥 CRASH & FLIP";
+                    title.innerText = t.crashTitle;
                     title.style.color = "#ef4444";
-                    desc.innerHTML = `앞/뒤 하부 분사로 수평 평형을 잡지 못했거나 강하 속도가 너무 빨랐습니다!<br>
-                                      롤: <b>${car.rollDeg}°</b>, 피치: <b>${car.pitchDeg}°</b> (종합 ${car.landingAngleDeg}°)<br>
-                                      착지 충격량: <b>${car.impactG} G</b>`;
+                    desc.innerHTML = t.crashDesc(car.rollDeg, car.pitchDeg, car.landingAngleDeg, car.impactG);
                 }
             }
         }
