@@ -570,31 +570,31 @@
         </div>
 
         <div class="mode-selector">
-            <button class="mode-btn active" id="btn-manual">🕹️ 수동 착지 (Manual)</button>
-            <button class="mode-btn" id="btn-ai">🤖 AI 오토파일럿 (Autopilot)</button>
-            <button class="mode-btn" id="btn-vs">⚔️ 사람 vs AI 비교</button>
+            <button class="mode-btn active" id="btn-manual">🕹️ Manual Landing</button>
+            <button class="mode-btn" id="btn-ai">🤖 AI Autopilot</button>
+            <button class="mode-btn" id="btn-vs">⚔️ Human vs AI</button>
         </div>
 
-        <!-- 속도 조절 UI (유저 맞춤형 슬로우 모션) -->
+        <!-- Speed control UI (Custom slow-motion) -->
         <div class="speed-control">
             <span class="speed-label">SPEED:</span>
-            <button class="speed-btn active" data-speed="0.35">0.35x (추천)</button>
+            <button class="speed-btn active" data-speed="0.35">0.35x (Rec)</button>
             <button class="speed-btn" data-speed="0.5">0.5x</button>
             <button class="speed-btn" data-speed="0.75">0.75x</button>
-            <button class="speed-btn" data-speed="1.0">1.0x (실시간)</button>
+            <button class="speed-btn" data-speed="1.0">1.0x (Live)</button>
         </div>
 
         <div class="header-actions">
-            <button class="btn-toggle-hud" id="btn-lang-toggle" title="Switch Language (English / 한국어)">🌐 English</button>
-            <button class="btn-toggle-hud active" id="btn-toggle-dock" title="온스크린 컨트롤러 버튼 숨김/표시">🎮 컨트롤러 패널</button>
-            <button class="btn-restart" id="btn-reset">🔄 재도약 (R)</button>
+            <button class="btn-toggle-hud" id="btn-lang-toggle" title="Switch Language (English / 한국어)">🌐 한국어</button>
+            <button class="btn-toggle-hud active" id="btn-toggle-dock" title="Toggle Controller Dock">🎮 Controller</button>
+            <button class="btn-restart" id="btn-reset">🔄 Restart (R)</button>
         </div>
     </header>
 
     <div id="sim-viewport">
         <canvas id="canvas"></canvas>
 
-        <!-- 상단 텔레메트리 바 -->
+        <!-- Top Telemetry Banner -->
         <div class="telemetry-banner">
             <div class="telemetry-item">
                 <span>STAGE:</span>
@@ -614,39 +614,39 @@
             </div>
         </div>
 
-        <!-- 상태 알림 토스트 (180도 뒤집힘 안내 등) -->
-        <div class="status-toast" id="status-toast">🚨 180° INVERTED! 상하(W / ▲)로 180° 회전하고, 좌우(A / D, ◀ / ▶)로 수평을 맞추세요!</div>
+        <!-- Status Toast -->
+        <div class="status-toast" id="status-toast">🚨 180° INVERTED! Press W / ▲ for 180° roll, A / D (◀ / ▶) to balance pitch!</div>
 
-        <!-- ★ 180도 롤 & 수평 평형 온스크린 컨트롤러 (상단 안전 구역 배치) -->
+        <!-- Onscreen Thruster Dock -->
         <div class="thruster-dock" id="thruster-dock">
-            <button class="thruster-btn roll" id="btn-roll-up" title="180도 롤 회전 복원 (W / ▲)">
-                <span class="t-icon">🔄 롤</span>
-                <span class="t-label">180° 회전 (W / ▲)</span>
-                <span class="t-sub">차체 바로세우기</span>
+            <button class="thruster-btn roll" id="btn-roll-up" title="180° Roll Recovery (W / ▲)">
+                <span class="t-icon">🔄 Roll</span>
+                <span class="t-label">180° Roll (W / ▲)</span>
+                <span class="t-sub">Right Inverted Body</span>
             </button>
-            <button class="thruster-btn" id="btn-thrust-front" title="앞부분 하부 분사 (A / ◀)">
-                <span class="t-icon">🚀 앞</span>
-                <span class="t-label">앞머리 밑 분사 (A / ◀)</span>
-                <span class="t-sub">앞머리 상승 / 피치 평형</span>
+            <button class="thruster-btn" id="btn-thrust-front" title="Front Bottom Thruster (A / ◀)">
+                <span class="t-icon">🚀 Front</span>
+                <span class="t-label">Front Bottom (A / ◀)</span>
+                <span class="t-sub">Nose Up / Level Pitch</span>
             </button>
-            <button class="thruster-btn both" id="btn-thrust-both" title="앞뒤 동시 분사 (SPACE / A+D)">
-                <span class="t-icon">⚡ 동시</span>
-                <span class="t-label">앞뒤 동시 분사 (SPACE / A+D)</span>
-                <span class="t-sub">수평 평형 유지 + 소프트 착지</span>
+            <button class="thruster-btn both" id="btn-thrust-both" title="Dual Bottom Thrusters (SPACE / A+D)">
+                <span class="t-icon">⚡ Dual</span>
+                <span class="t-label">Dual Thrusters (SPACE / A+D)</span>
+                <span class="t-sub">Level Balance + Soft Landing</span>
             </button>
-            <button class="thruster-btn" id="btn-thrust-rear" title="뒷부분 하부 분사 (D / ▶)">
-                <span class="t-icon">🚀 뒤</span>
-                <span class="t-label">뒷부분 밑 분사 (D / ▶)</span>
-                <span class="t-sub">뒷부분 상승 / 피치 평형</span>
+            <button class="thruster-btn" id="btn-thrust-rear" title="Rear Bottom Thruster (D / ▶)">
+                <span class="t-icon">🚀 Rear</span>
+                <span class="t-label">Rear Bottom (D / ▶)</span>
+                <span class="t-sub">Tail Up / Level Pitch</span>
             </button>
-            <button class="thruster-toggle-btn" id="btn-close-dock" title="컨트롤러 패널 숨기기">✕</button>
+            <button class="thruster-toggle-btn" id="btn-close-dock" title="Close Controller Dock">✕</button>
         </div>
 
-        <!-- 키보드 안내 가이드: 상하 180도 회전 + 좌우 수평 제어 안내 -->
+        <!-- Key Guide -->
         <div class="key-guide" id="key-guide">
-            <div><span class="key-tag">W / S (▲ / ▼)</span> 180° 상하 롤 회전 (자세 복원)</div>
-            <div><span class="key-tag">A / D (◀ / ▶)</span> 좌우 수평 제어 (앞 / 뒷부분 밑 분사)</div>
-            <div><span class="key-tag">A+D 동시 / SPACE</span> 앞뒤 동시 분사 (수평 & 소프트 착지)</div>
+            <div><span class="key-tag">W / S (▲ / ▼)</span> 180° Roll Recovery (W / S, ▲ / ▼)</div>
+            <div><span class="key-tag">A / D (◀ / ▶)</span> Pitch Leveling (Front / Rear Bottom: A / D, ◀ / ▶)</div>
+            <div><span class="key-tag">A+D / SPACE</span> Dual Thrusters (A+D / SPACE Soft Touchdown)</div>
         </div>
 
         <!-- 하단 비디오 스타일 오버레이 HUD -->
@@ -712,11 +712,11 @@
             </div>
         </div>
 
-        <!-- 결과 모달 창 -->
+        <!-- Result Modal -->
         <div class="modal" id="modal">
             <div class="modal-title" id="modal-title">TOUCHDOWN</div>
-            <div class="modal-score" id="modal-desc">착지 데이터</div>
-            <button class="modal-btn" id="modal-restart-btn">다시 시도하기 (R)</button>
+            <div class="modal-score" id="modal-desc">Landing Telemetry</div>
+            <button class="modal-btn" id="modal-restart-btn">Try Again (R)</button>
         </div>
     </div>
 
@@ -816,7 +816,8 @@
         };
 
         const urlParams = new URLSearchParams(window.location.search);
-        let currentLang = urlParams.get("lang") || "en";
+        let currentLang = urlParams.get("lang") || localStorage.getItem("roadster_lang") || "en";
+        if (currentLang !== "en" && currentLang !== "ko") currentLang = "en";
 
         function applyLanguage(lang) {
             currentLang = lang;
