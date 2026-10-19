@@ -2,10 +2,15 @@
 
 > **Tesla Roadster SpaceX 패키지 180° 반원 램프 점프 및 콜드가스 역추진 수평 착지 시뮬레이터**
 
-Tesla Roadster 시연 동영상에서 영감을 받아 제작된 웹 기반 고성능 물리 시뮬레이터입니다.
-90도 수직을 넘어 180도 완전 반원 궤도를 타고 거꾸로 뒤집힌 로드스터를 **SpaceX 콜드가스 스러스터**로 자세를 복원하고 수평을 유지하며 안전하게 터치다운시키는 게임 및 AI 시뮬레이션입니다.
+[![Play Online](https://img.shields.io/badge/🎮_Play_Online-GitHub_Pages-brightgreen?style=for-the-badge)](https://linxunfang.github.io/tesla-roadster-simulator/)
+[![Buy Me A Coffee](https://img.shields.io/badge/☕_Buy_Me_a_Coffee-linxunfang-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/linxunfang)
 
-![Simulator Screenshot](landing_sequence.png)
+Tesla Roadster 시연 동영상에서 영감을 받아 제작된 웹 기반 고성능 물리 시뮬레이터입니다.  
+90도 수직을 넘어 180도 완전 반원(Semi-Circle) 궤도를 타고 거꾸로 뒤집힌 로드스터를 **SpaceX 콜드가스 RCS 스러스터**로 180도 롤 복원하고, **앞/뒤 하부 추진 노즐**로 수평을 맞추어 안전하게 터치다운시키는 실시간 물리 엔진 게임입니다.
+
+👉 **지금 바로 브라우저에서 플레이해 보세요**: [https://linxunfang.github.io/tesla-roadster-simulator/](https://linxunfang.github.io/tesla-roadster-simulator/)
+
+![Tesla Roadster Web Simulator Preview](landing_sequence.png)
 
 ---
 
